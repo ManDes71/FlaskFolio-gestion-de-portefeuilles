@@ -112,7 +112,7 @@ Ce projet utilise APScheduler pour planifier des tâches récurrentes comme :
 
 - Les seuils de prix sont définis dans le fichier de config (`stocks.py`)
 - Vous recevrez un email si un seuil est franchi (achat ou vente)
-![png](/ImagesMd/FlaskFolio_admin_liquidites.jpg)
+![jpg](/ImagesMd/FlaskFolio_admin_liquidites.jpg)
 
 ---
 
