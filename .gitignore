@@ -27,8 +27,12 @@ share/python-wheels/
 *.egg
 MANIFEST
 docker-compose-classique.yml
-exports_local/
-uploads_local/
+# Ignorer les dossiers d'export et d'upload, mais garder les dossiers eux-mêmes
+exports_local/*
+!exports_local/.gitkeep
+
+uploads_local/*
+!uploads_local/.gitkeep
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
