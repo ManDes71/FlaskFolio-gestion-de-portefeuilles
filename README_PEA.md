@@ -65,7 +65,7 @@ Elle fournit un suivi des cours en temps réel, l’import de transactions, ains
 ├── tests/
 │   └── test_dummy.py
 
-
+```
 
 ---
 🔁 Tâches planifiées avec APScheduler
