@@ -96,44 +96,44 @@ Ce projet utilise APScheduler pour planifier des tâches récurrentes comme :
 
 - Accéder à `/login`
 - Entrer vos identifiants pour accéder au tableau de bord
-![jpg](\ImagesMd\FlaskFolio_login.jpg)
+![jpg](/ImagesMd/FlaskFolio_login.jpg)
 
 ###  📥 3. administrer le site
 
 - Cliquer sur 'Administration'
-![jpg](\ImagesMd\FlaskFolio_admin.jpg)
+![jpg](/ImagesMd/FlaskFolio_admin.jpg)
 
 ###  🔔 4 . Suprimmer ou modifier des transactions
 
 - Cliquer sur 'Administration' puis 'Voir toute les transactions'
 
-![jpg](\ImagesMd\FlaskFolio_admin_transactions.jpg)
+![jpg](/ImagesMd/FlaskFolio_admin_transactions.jpg)
 
 ###  🔔 5 . Suprimmer des mouvements d'espèces
 
 - Cliquer sur 'Administration' puis 'Voir toutes les liquidités'
-![jpg](\ImagesMd\FlaskFolio_admin_liquidites.jpg)
+![jpg](/ImagesMd/FlaskFolio_admin_liquidites.jpg)
 
 ###  🔔 6 . Visualiser le Scheduler
 
 - Visualiser l'état du scheduler et les taches en cours
 - Il est posssible de suspendre, d'arreter ou de relancer une tache
-![jpg](\ImagesMd\FlaskFolio_admin_Scheduler.jpg)
+![jpg](/ImagesMd/FlaskFolio_admin_Scheduler.jpg)
 
 ###  🔔 7 . Lancer le Scheduler
 
 Il est possible de lancer le Scheduler ou de relancer à partir du menu d'administrattion
-![jpg](\ImagesMd\FlaskFolio_admin_RelScheduler.jpg)
+![jpg](/ImagesMd/FlaskFolio_admin_RelScheduler.jpg)
 
 ###  📥 8. Valeurs suivies
 
 - Cliquer sur 'Administration'
 - Formulaire de saisie d'une nouvelle valeur à suivre
-![jpg](\ImagesMd\FlaskFolio_valasuivre.jpg)
+![jpg](/ImagesMd/FlaskFolio_valasuivre.jpg)
 ...
 ...
 ...
-![jpg](\ImagesMd\FlaskFolio_valasuivre_2.jpg)
+![jpg](/ImagesMd/FlaskFolio_valasuivre_2.jpg)
 
 - Liste des opérations possibles : 
   - enregistrer une nouvelle valeur
@@ -146,11 +146,11 @@ Il est possible de lancer le Scheduler ou de relancer à partir du menu d'admini
 
 - Cliquer sur 'Administration'
 - Formulaire de saisie d'une nouvelle valeur à ajouter au portefeuille selectionné
-![jpg](\ImagesMd\FlaskFolio_portefeuille.jpg)
+![jpg](/ImagesMd/FlaskFolio_portefeuille.jpg)
 ...
 ...
 ...
-![jpg](\ImagesMd\FlaskFolio_portefeuille_2.jpg)
+![jpg](/ImagesMd/FlaskFolio_portefeuille_2.jpg)
 
 - Liste des opérations possibles sur le portefeuille : 
   - ajouter une nouvelle action
@@ -164,13 +164,13 @@ Il est possible de lancer le Scheduler ou de relancer à partir du menu d'admini
 ###  🔔 10. Ajouter un transaction à un portefeuille
 
 - Les transactions s'ajoutent automatiquement lors de l'ajout d'une opération sur un portefeuille, mais il est possible d'ajouter des transactions individuelles.
-![jpg](\ImagesMd\FlaskFolio_ajout_transaction.jpg)
+![jpg](/ImagesMd/FlaskFolio_ajout_transaction.jpg)
 
 ###  🔔 11 . Ajouter un mouvement de trésorerie à un portefeuille
 
 - Les transactions s'ajoutent automatiquement lors de l'ajout d'une opération sur un portefeuille, mais il est aussi possibled'ajouter des transactions individuelles comme par exemple les saisies de dividendes.
 
-![jpg](\ImagesMd\FlaskFolio_ajout_cash.jpg)
+![jpg](/ImagesMd/FlaskFolio_ajout_cash.jpg)
 
 ---
 
