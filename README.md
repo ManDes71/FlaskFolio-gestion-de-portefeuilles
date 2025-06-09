@@ -54,19 +54,28 @@ Elle fournit un suivi des cours en temps réel, l’import de transactions, ains
 
 ```
 .
-├── app.py
-├── manage.py
 ├── .env
+├── app.py
+├── docker-compose.yml
+├── dockerfile
+├── manage.py
+├── prometheus.yml
+├── README.md
+├── requirements.txt
+├── tasks_scheduler.py
 ├── config/
 │   └── settings.py
 ├── pea_trading/
 │   ├── __init__.py
-│   ├── users/
+│   ├── admin/
+│   ├── error_pages/
 │   ├── portfolios/
 │   ├── services/
+│   ├── static/
 │   └── templates/
-├── tests/
-│   └── test_dummy.py
+│   ├── users/
+│   ├── utils/
+
 
 
 ```
