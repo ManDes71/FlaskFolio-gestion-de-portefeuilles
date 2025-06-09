@@ -1,8 +1,4 @@
-Voici un exemple de fichier `README.md` que tu peux utiliser pour publier ton projet sur GitHub. Il met en valeur les fonctionnalités, technologies et objectifs de ton application de gestion de portefeuille boursier :
 
----
-
-````markdown
 # 📈 FlaskFolio – Gestion de Portefeuille Boursier
 
 **FlaskFolio** est une application web de gestion de portefeuille boursier.  
