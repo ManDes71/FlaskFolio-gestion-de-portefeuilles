@@ -1,0 +1,114 @@
+<!--pea_trading\templates\portfolio_history.html -->
+{% extends "base.html" %}
+
+{% block title %}Historique du Portefeuille  - {{ portfolio.name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Évolution du Portefeuille  - {{ portfolio.name }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Valeur totale</h5>
+                        <p class="card-text h3">{{ "%.2f"|format(current_value | default(0)) }}€</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Performance YTD</h5>
+                        <p class="card-text h3 {{ 'text-success' if ytd_performance > 0 else 'text-danger' }}">
+                            {{ "%.2f"|format(ytd_performance | default(0)) }}%
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Plus-value</h5>
+                        <p class="card-text h3 {{ 'text-success' if total_gain > 0 else 'text-danger' }}">
+                            {{ "%.2f"|format(total_gain | default(0)) }}€
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Volatilité</h5>
+                        <p class="card-text h3">{{ "%.2f"|format(volatility | default(0)) }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group mb-3" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="updateChart('1M')">1M</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="updateChart('3M')">3M</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="updateChart('6M')">6M</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="updateChart('1Y')">1A</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="updateChart('YTD')">YTD</button>
+                </div>
+                <canvas id="portfolioChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let portfolioChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('portfolioChart').getContext('2d');
+    portfolioChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ dates|tojson }},
+            datasets: [{
+                label: 'Valeur du portefeuille',
+                data: {{ values|tojson }},
+                borderColor: '#36A2EB',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y}€`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+function updateChart(period) {
+    fetch(`/api/portfolio/history/${period}`)
+        .then(response => response.json())
+        .then(data => {
+            portfolioChart.data.labels = data.dates;
+            portfolioChart.data.datasets[0].data = data.values;
+            portfolioChart.update();
+        });
+}
+</script>
+{% endblock %}

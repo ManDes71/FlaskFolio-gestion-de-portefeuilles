@@ -1,0 +1,50 @@
+
+services:
+  web:
+    build: .
+    image: pea_web:dev
+    container_name: pea-trading-app
+    volumes:
+      - ./db_data:/app/db_data
+      - ./exports_local:/app/pea_trading/static/exports
+      - ./uploads_local:/app/pea_trading/static/uploads
+    environment:
+      - USE_EXTERNAL_DB=1
+    #command: gunicorn -b 0.0.0.0:5000 pea_trading:application
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "5000:5000"  
+    networks:
+      - webproxy
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+    networks:
+      - webproxy
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - webproxy
+
+networks:
+  webproxy:
+    driver: bridge

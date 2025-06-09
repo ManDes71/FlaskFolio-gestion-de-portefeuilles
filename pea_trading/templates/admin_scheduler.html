@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Tâches planifiées{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h2>📆 Tâches planifiées (APScheduler)</h2>
+  <p>
+  <strong>🕒 Heure du serveur :</strong> {{ server_time.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+  <strong>🕓 Heure de Paris :</strong> {{ paris_time.strftime('%Y-%m-%d %H:%M:%S') }} (Europe/Paris)
+</p>
+
+  <table class="table table-bordered table-hover">
+    <thead class="table-light">
+      <tr>
+        <th>ID</th>
+        <th>Fonction</th>
+        <th>Type</th>
+        <th>Intervalle / Cron</th>
+        <th>Prochaine exécution</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td>{{ job.id }}</td>
+        <td>{{ job.func_ref }}</td>
+        <td>{{ job.trigger_class}}</td>
+        <td>{{ job.trigger }}</td>
+        <td>
+          {{ job.next_run_time_server.strftime('%Y-%m-%d %H:%M:%S') if job.next_run_time_server else '---' }}<br>
+          <small class="text-muted">
+            (Paris : {{ job.next_run_time_paris.strftime('%Y-%m-%d %H:%M:%S') if job.next_run_time_paris else '---' }})
+          </small>
+        </td>
+        <td>
+            <form method="POST" action="{{ url_for('admin.run_scheduler_job_now', job_id=job.id) }}">
+              <button type="submit" class="btn btn-sm btn-success">▶️ Lancer</button>
+            </form>
+        </td>
+        <td>
+            <!-- Lancer maintenant -->
+            <form method="POST" action="{{ url_for('admin.run_scheduler_job_now', job_id=job.id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-success">▶️</button>
+            </form>
+          
+            <!-- Pause -->
+            <form method="POST" action="{{ url_for('admin.pause_scheduler_job', job_id=job.id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-warning">⏸</button>
+            </form>
+          
+            <!-- Supprimer -->
+            <form method="POST" action="{{ url_for('admin.remove_scheduler_job', job_id=job.id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer cette tâche ?')">🗑</button>
+            </form>
+          </td>
+          
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

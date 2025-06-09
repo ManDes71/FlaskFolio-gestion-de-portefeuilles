@@ -1,0 +1,35 @@
+services:
+  web:
+    build: .
+    container_name: pea-trading-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./db_data:/app/db_data
+    environment:
+      - USE_EXTERNAL_DB=1
+    restart: unless-stopped  
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring  
+    restart: unless-stopped  
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring  
+    restart: unless-stopped  
+networks:
+  monitoring:    

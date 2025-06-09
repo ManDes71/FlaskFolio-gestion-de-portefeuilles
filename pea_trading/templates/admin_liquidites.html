@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Admin - Liquidités{% endblock %}
+{% block content %}
+<form method="GET" class="row g-3 align-items-center mb-4">
+    <div class="col-auto">
+        <label for="portfolioSelect" class="col-form-label">Portefeuille :</label>
+    </div>
+    <div class="col-auto">
+        <select name="portfolio_id" id="portfolioSelect" class="form-select">
+            <option value="">Tous</option>
+            {% for p in portfolios %}
+                <option value="{{ p.id }}" {% if selected_portfolio_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+    </div>
+    <div class="col-auto">
+        <a class="btn btn-success" href="{{ url_for('admin.export_cash_movements', portfolio_id=selected_portfolio_id) }}">📁 Export CSV</a>
+
+    </div>
+</form>
+
+<h2 class="mb-4">💰 Tous les mouvements de trésorerie (admin)</h2>
+
+<table class="table table-hover table-bordered">
+    <thead>
+        <tr><th>Date</th><th>Type</th><th>Montant</th><th>Description</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+        {% for mv in movements.items %}
+        <tr>
+            <td>{{ mv.date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ mv.type }}</td>
+            <td>{{ "%.2f"|format(mv.amount) }} €</td>
+            <td>{{ mv.description or '' }}</td>
+            <td>
+                <!-- Bouton supprimer -->
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteMovementModal{{ mv.id }}">
+                    🗑️
+                </button>
+                <!-- Modale de confirmation -->
+                <div class="modal fade" id="confirmDeleteMovementModal{{ mv.id }}" tabindex="-1" aria-labelledby="confirmDeleteMovementLabel{{ mv.id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="confirmDeleteMovementLabel{{ mv.id }}">Confirmer la suppression</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                      </div>
+                      <div class="modal-body">
+                        Supprimer ce mouvement du {{ mv.date.strftime('%d/%m/%Y') }} ?
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <form method="POST" action="{{ url_for('admin.delete_cash_movement', movement_id=mv.id) }}">
+                          <button type="submit" class="btn btn-danger">Supprimer</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% set pagination = movements %}
+{% include "pagination.html" %}
+{% endblock %}

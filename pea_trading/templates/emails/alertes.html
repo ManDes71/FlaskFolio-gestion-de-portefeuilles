@@ -1,0 +1,36 @@
+<h2>📊 Alerte détectée sur votre portefeuille <strong>{{ portfolio.name }}</strong></h2>
+<p>Voici les dernières alertes détectées :</p>
+
+{% if alertes_vente %}
+<h4>🚨 Alertes de vente :</h4>
+<ul>
+  {% for stock in alertes_vente %}
+    <li>
+  <strong>{{ stock.name }}</strong> ({{ stock.symbol }}) – {{ "%.2f"|format(stock.current_price) }}€
+  <br>
+  <small>
+    Limite franchie : {{ "%.2f"|format(stock.limite) }}€ —
+    Écart : {{ "%.2f"|format(stock.ecart_pct) }}%
+  </small>
+</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if alertes_achat %}
+<h4>🟢 Alertes d’achat :</h4>
+<ul>
+  {% for stock in alertes_achat %}
+    <li>
+  <strong>{{ stock.name }}</strong> ({{ stock.symbol }}) – {{ "%.2f"|format(stock.current_price) }}€
+  <br>
+  <small>
+    Limite franchie : {{ "%.2f"|format(stock.limite) }}€ —
+    Écart : {{ "%.2f"|format(stock.ecart_pct) }}%
+  </small>
+</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<p>🔗 <a href="{{ url_for('portfolios.list_portfolios', _external=True) }}">Accéder à vos portefeuilles</a></p>

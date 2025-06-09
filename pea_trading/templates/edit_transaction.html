@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier Transaction{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Modifier Transaction</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.quantity.label(class="form-label") }}
+            {{ form.quantity(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.price.label(class="form-label") }}
+            {{ form.price(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.date.label(class="form-label") }}
+            {{ form.date(class="form-control") }}
+          </div>
+        {{ form.submit(class="btn btn-success") }}
+        <a href="{{ url_for('admin.admin', portfolio_id=transaction.portfolio_id) }}" class="btn btn-secondary">Annuler</a>
+    </form>
+</div>
+{% endblock %}

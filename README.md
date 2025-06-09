@@ -180,7 +180,8 @@ Il est possible de lancer le Scheduler ou de relancer à partir du menu d'admini
 
 ```bash
 git clone https://github.com/votre-utilisateur/pea-trading.git
-cd pea-trading
+git clone git@github.com:ManDes71/FlaskFolio-gestion-de-portefeuilles.git
+cd FlaskFolio-gestion-de-portefeuilles
 ````
 
 2. **Configurer l’environnement**
@@ -198,10 +199,27 @@ MAIL_PASSWORD=your-email-password
 ## **Démarrer l’application avec Docker**
 
 ```bash
-docker-compose up --build
+docker-compose down
+docker-compose build
+docker-compose up -d
+
+lancer ces commandes en lignes en shell interactif
+docker-compose exec web bash
+
+ -python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
+ - python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
+ - python manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv"
+ - python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
+'''
+
+
+docker-compose logs -f web
+
+
+
 ```
 
-L'application sera disponible sur `http://127.0.0.1:5000`.
+L'application sera disponible sur `http://127.0.0.1:5000/portefolios`.
 
 Ce fichier `manage.py` est un **script de gestion personnalisé** pour une application Flask appelée `pea_trading`. Il utilise **Click** (via `flask.cli.FlaskGroup`) pour proposer une **interface en ligne de commande** avec plusieurs commandes utiles pour le développement, l’administration et les tests de l’application.
 

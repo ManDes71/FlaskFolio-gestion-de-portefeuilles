@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Valeurs{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Gestion des Valeurs</h2>
+    <a href="{{ url_for('admin.admin') }}" class="btn btn-secondary mb-3">Retour à l'administration</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbole</th>
+                <th>Nom</th>
+                <th>ISIN</th>
+                <th>Secteur</th>
+                <th>Prix actuel</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in stocks %}
+            <tr>
+                <td>{{ stock.symbol }}</td>
+                <td><a href="{{ url_for('portfolios.stock_history', symbol=stock.symbol) }}">{{ stock.name }}</a></td>
+                <td>{{ stock.isin }}</td>
+                <td>{{ stock.sector }}</td>
+                <td>{{ "%.2f"|format(stock.current_price) }}€</td>
+                <td>
+                    <a href="{{ url_for('admin.edit_stock', stock_id=stock.id) }}" class="btn btn-warning btn-sm">Modifier</a>
+                    <form method="POST" action="{{ url_for('admin.delete_stock', stock_id=stock.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Confirmer la suppression ?')">Supprimer</button>
+                    </form>
+                    
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

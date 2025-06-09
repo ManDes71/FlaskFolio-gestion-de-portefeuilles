@@ -1,0 +1,149 @@
+<!--pea_trading\templates\select_portfolio.html -->
+{% extends "base.html" %}
+
+{% block title %}Sélection du Portefeuille{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Sélectionnez un Portefeuille</h2>
+    <div class="list-group">
+        {% for portfolio in portfolios %}
+        <a href="{{ url_for('portfolios.select_portfolio', portfolio_id=portfolio.id) }}" class="list-group-item list-group-item-action">
+            {{ portfolio.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if selected_portfolio %}
+  {% set total_alertes = alertes_vente | length + alertes_achat | length %}
+  
+  {% if total_alertes > 0 %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      🚨 <strong>Attention !</strong> {{ total_alertes }} alerte{{ total_alertes > 1 and 's' or '' }} détectée{{ total_alertes > 1 and 's' or '' }} :
+      {% if alertes_vente %}
+        {{ alertes_vente | length }} signal{{ alertes_vente | length > 1 and 's' or '' }} de <strong>vente</strong>
+      {% endif %}
+      {% if alertes_vente and alertes_achat %} et {% endif %}
+      {% if alertes_achat %}
+        {{ alertes_achat | length }} signal{{ alertes_achat | length > 1 and 's' or '' }} d’<strong>achat</strong>
+      {% endif %}
+      <br>
+      <a href="#alertes-section" class="alert-link">Voir les détails plus bas</a>.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% else %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      ✅ <strong>Aucune alerte détectée.</strong> Toutes les valeurs sont dans leurs bornes définies.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+  {% endif %}
+{% endif %}
+
+
+
+    {% if selected_portfolio %}
+<div class="row mt-4" id="alertes-section">
+  <div class="col-md-6">
+    <div class="card border-danger mb-3">
+      <div class="card-header bg-danger text-white">🚨 Alerte - Signal de vente</div>
+      <div class="card-body">
+        {% if alertes_vente %}
+          {% for stock in alertes_vente %}
+            <div class="alert alert-warning">
+              {{ stock.name }} ({{ stock.symbol }}) – {{ "%.2f"|format(stock.current_price) }}€
+              {% if stock.target_price and stock.current_price >= stock.target_price %}
+                <br><strong>Objectif atteint :</strong> {{ "%.2f"|format(stock.target_price) }}€
+              {% endif %}
+              {% if stock.min_price and stock.current_price <= stock.min_price %}
+                <br><strong>Borne min atteinte :</strong> {{ "%.2f"|format(stock.min_price) }}€
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>Aucune alerte de vente</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card border-success mb-3">
+      <div class="card-header bg-success text-white">🟢 Alerte - Signal d'achat</div>
+      <div class="card-body">
+        {% if alertes_achat %}
+          {% for stock in alertes_achat %}
+            <div class="alert alert-info">
+              {{ stock.name }} ({{ stock.symbol }}) – {{ "%.2f"|format(stock.current_price) }}€
+              <br><strong>Borne max atteinte :</strong> {{ "%.2f"|format(stock.max_price) }}€
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>Aucune alerte d'achat</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% if selected_portfolio %}
+<div class="row mt-4">
+  <div class="col-md-6">
+    <h4>📏 Bornes à remonter (valeurs en portefeuille)</h4>
+    {% if bornes_min_a_remonter %}
+    <table class="table table-sm table-bordered table-striped">
+      <thead class="table-warning">
+        <tr>
+          <th>Symbole</th>
+          <th>Nom</th>
+          <th>Prix actuel</th>
+          <th>Borne max</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stock in bornes_min_a_remonter %}
+        <tr>
+          <td>{{ stock.symbol }}</td>
+          <td>{{ stock.name }}</td>
+          <td>{{ "%.2f"|format(stock.current_price) }}€</td>
+          <td>{{ "%.2f"|format(stock.max_price) }}€</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>Aucune borne à remonter</p>
+    {% endif %}
+  </div>
+
+  <div class="col-md-6">
+    <h4>📉 Bornes à abaisser (valeurs hors portefeuille)</h4>
+    {% if bornes_min_a_abaisser %}
+    <table class="table table-sm table-bordered table-striped">
+      <thead class="table-info">
+        <tr>
+          <th>Symbole</th>
+          <th>Nom</th>
+          <th>Prix actuel</th>
+          <th>Borne min</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stock in bornes_min_a_abaisser %}
+        <tr>
+          <td>{{ stock.symbol }}</td>
+          <td>{{ stock.name }}</td>
+          <td>{{ "%.2f"|format(stock.current_price) }}€</td>
+          <td>{{ "%.2f"|format(stock.min_price) }}€</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>Aucune borne à abaisser</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

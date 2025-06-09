@@ -1,0 +1,528 @@
+<!-- ===== admin.html ===== -->
+<!-- pea_trading\templates\admin.html -->
+{% extends "base.html" %}
+
+{% block title %}Administration{% endblock %}
+
+{% block content %}
+<script>
+    console.log("✅ Le script JavaScript est bien chargé !");
+</script>
+
+<div class="container mb-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-danger me-2">🔐 Réinitialiser les mots de passe</a>
+        <a href="{{ url_for('admin.admin_transactions') }}" class="btn btn-outline-dark me-2">📄 Voir toutes les transactions</a>
+        <a href="{{ url_for('admin.admin_liquidites') }}" class="btn btn-outline-dark">💰 Voir toutes les liquidités</a>
+        <a href="{{ url_for('admin.scheduler_dashboard') }}" class="btn btn-outline-info">📅 Voir les tâches planifiées</a>
+        <form id="restartSchedulerForm" method="POST" action="{{ url_for('admin.restart_scheduler') }}">
+            <button type="submit" class="btn btn-outline-warning">🚀 Relancer le scheduler</button>
+        </form>
+        <div id="schedulerMessage" class="mt-2"></div>
+        
+    </div>      
+    <h2 class="my-4">Valeurs à suivre</h2>
+    <a href="{{ url_for('admin.admin_valeurs') }}" class="btn btn-primary me-2">Administrer les valeurs</a>
+    <!-- Mise à jour manuelle -->
+<form method="POST" action="{{ url_for('admin.update_stocks_manual') }}" class="mt-3">
+    <button type="submit" class="btn btn-warning me-2">🔁 Mettre à jour les valeurs</button>
+</form>
+<!-- Formulaire d'ajout d'une nouvelle valeur à suivre -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">Ajouter une valeur à suivre</div>
+    <div class="card-body">
+
+        {% if form_stock.errors %}
+            <div class="alert alert-danger">
+                <strong>Erreur dans le formulaire :</strong>
+                <ul class="mb-0">
+                    {% for field_errors in form_stock.errors.values() %}
+                        {% for error in field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form id="stockForm" method="POST" action="{{ url_for('admin.add_stock') }}">
+            {{ form_stock.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form_stock.symbol.label(class="form-label") }}
+                {{ form_stock.symbol(class="form-control", placeholder="Ex: EL.PA") }}
+                {% if form_stock.symbol.errors %}
+                    <div class="text-danger small">{{ form_stock.symbol.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.isin.label(class="form-label") }}
+                {{ form_stock.isin(class="form-control", placeholder="Ex: FR0000121667") }}
+                {% if form_stock.isin.errors %}
+                    <div class="text-danger small">{{ form_stock.isin.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.name.label(class="form-label") }}
+                {{ form_stock.name(class="form-control") }}
+                {% if form_stock.name.errors %}
+                    <div class="text-danger small">{{ form_stock.name.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.sector.label(class="form-label") }}
+                {{ form_stock.sector(class="form-control") }}
+                {% if form_stock.sector.errors %}
+                    <div class="text-danger small">{{ form_stock.sector.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.current_price.label(class="form-label") }}
+                {{ form_stock.current_price(class="form-control") }}
+                {% if form_stock.current_price.errors %}
+                    <div class="text-danger small">{{ form_stock.current_price.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.max_price.label(class="form-label") }}
+                {{ form_stock.max_price(class="form-control") }}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.min_price.label(class="form-label") }}
+                {{ form_stock.min_price(class="form-control") }}
+            </div>
+
+            <div class="mb-3">
+                {{ form_stock.target_price.label(class="form-label") }}
+                {{ form_stock.target_price(class="form-control") }}
+            </div>
+
+            <button type="submit" class="btn btn-success">Ajouter la valeur</button>
+        </form>
+    </div>
+</div>
+<div class="my-2"></div>
+    <a href="{{ url_for('admin.export_stocks') }}" class="btn btn-primary">Exporter les actions en CSV</a>
+    <a href="{{ url_for('admin.export_stock_history') }}" class="btn btn-primary">Exporter l'historique complet des valeurs en CSV</a>
+</div>
+<!-- Ajout du formulaire d'importation -->
+<div class="card">
+    <div class="card-header">Importer des données</div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.import_stocks_csv') }}">
+            <div class="mb-3">
+                <label for="stocks_file" class="form-label">Importer les actions en CSV</label>
+                <input type="file" name="stocks_file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Importer les actions</button>
+        </form>
+
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.import_stock_history_csv') }}" class="mt-3">
+            <div class="mb-3">
+                <label for="history_file" class="form-label">Importer l'historique des valeurs en CSV</label>
+                <input type="file" name="history_file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Importer l'historique complet des valeurs</button>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    
+    <h2 class="my-4">Administration du Portefeuille</h2>
+
+    <!-- Création d'un nouveau portefeuille -->
+    <form method="POST"  action="{{ url_for('admin.create_portfolio') }}" class="mb-4">
+        {{ form_portfolio_creation.hidden_tag() }}
+        <input type="hidden" name="form_name" value="portfolio_creation_form">
+        <div class="mb-3">
+            {{ form_portfolio_creation.name.label(class="form-label") }}
+            {{ form_portfolio_creation.name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form_portfolio_creation.description.label(class="form-label") }}  <!-- ✅ Ajout du champ description -->
+            {{ form_portfolio_creation.description(class="form-control") }}
+        </div>
+        {{ form_portfolio_creation.submit(class="btn btn-success") }}
+    </form>
+
+    <!-- Sélection du portefeuille -->
+    <form method="POST" action="{{ url_for('admin.admin') }}" class="mb-4">
+        {{ form_portfolio_selection.hidden_tag() }}
+        <input type="hidden" name="form_name" value="portfolio_selection_form">
+        <div class="mb-3">
+            {{ form_portfolio_selection.portfolio.label(class="form-label") }}
+            {{ form_portfolio_selection.portfolio(class="form-control") }}
+        </div>
+        {{ form_portfolio_selection.submit(class="btn btn-primary") }}
+    </form>
+
+    <p>Portefeuille sélectionné : {{ selected_portfolio.id }}</p>
+
+
+
+   
+
+    {% if selected_portfolio %}
+    <h3>Portefeuille sélectionné : {{ selected_portfolio.name }}</h3>
+    
+    <div class="card mb-4">
+        <div class="card-header">Gestion des Produits</div>
+        <div class="card-body">
+             <!-- Message de chargement caché au départ -->
+            <div id="loadingMessage" class="alert alert-info" style="display: none;">
+                Chargement en cours, veuillez patienter...
+            </div>
+
+            <form id="productForm" method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="form_name" value="product_form">
+                <input type="hidden" name="portfolio_id" value="{{ selected_portfolio.id }}">
+                <div class="mb-3">
+                    {{ form.symbol.label(class="form-label") }}
+                    {{ form.symbol(class="form-control") }}                    
+                </div>
+                <div class="mb-3">
+                    {{ form.isin.label(class="form-label") }}
+                    {{ form.isin(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.sector.label(class="form-label") }}
+                    {{ form.sector(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.quantity.label(class="form-label") }}
+                    {{ form.quantity(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="date">Date d'achat</label>
+                    <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                <div class="mb-3">
+                    {{ form.purchase_price.label(class="form-label") }}
+                    {{ form.purchase_price(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.max_price.label(class="form-label") }}
+                    {{ form.max_price(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.min_price.label(class="form-label") }}
+                    {{ form.min_price(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.target_price.label(class="form-label") }}
+                    {{ form.target_price(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    <button type="button" class="btn btn-success" id="submitProduct">Ajouter au portefeuille</button>
+                    {{ form.submit_remove(class="btn btn-danger") }} 
+                    {{ form.submit_reinforce(class="btn btn-outline-success") }}
+                    {{ form.submit_reduce(class="btn btn-outline-warning") }}
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Sauvegarde et Restauration</div>
+        <div class="card-body">
+            <a href="{{ url_for('admin.export_csv', portfolio_id=selected_portfolio.id) }}" class="btn btn-primary">Sauvegarder le portefeuille en CSV</a>
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.restore_positions') }}" class="mt-3">
+                {{ form_restore.hidden_tag() }}
+                <input type="hidden" name="form_name" value="restore_form">
+                <input type="hidden" name="portfolio_id" value="{{ selected_portfolio.id }}">
+                <div class="mb-3">
+                    {{ form_restore.file.label(class="form-label") }}
+                    {{ form_restore.file(class="form-control") }}
+                </div>
+                {{ form_restore.submit(class="btn btn-warning") }}
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-danger">Veuillez sélectionner un portefeuille.</p>
+    {% endif %}
+</div>
+
+{% if selected_portfolio.transactions %}
+<div class="card mt-5">
+    <div class="card-header">Historique des Transactions</div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Symbole</th>
+                    <th>Quantité</th>
+                    <th>Prix unitaire</th>
+                    <th>Montant total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in selected_portfolio.transactions[:5] %}
+                <tr>
+                    <td>{{ tx.date.strftime('%d/%m/%Y') }}</td>
+                    <td class="text-capitalize">{{ tx.type }}</td>
+                    <td>{{ tx.stock.symbol }}</td>
+                    <td>{{ tx.quantity }}</td>
+                    <td>{{ "%.2f"|format(tx.price) }}€</td>
+                    <td>{{ "%.2f"|format(tx.quantity * tx.price) }}€</td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_transaction', transaction_id=tx.id) }}" class="btn btn-sm btn-warning">✏️ Modifier</a>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ tx.id }}">
+                            🗑️ Supprimer
+                        </button>
+                        <!-- Modale de confirmation -->
+                        <div class="modal fade" id="confirmDeleteModal{{ tx.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ tx.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="confirmDeleteLabel{{ tx.id }}">Confirmer la suppression</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                </div>
+                                <div class="modal-body">
+                                Es-tu sûr de vouloir supprimer la transaction du <strong>{{ tx.date.strftime('%d/%m/%Y') }}</strong> sur <strong>{{ tx.stock.symbol }}</strong> ?
+                                </div>
+                                <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                <form method="POST" action="{{ url_for('admin.delete_transaction', transaction_id=tx.id) }}">
+                                    <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
+                                </form>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+
+
+
+<p>Portefeuille sélectionné : {{ selected_portfolio.id }}</p>
+
+<div class="card my-4 border-primary">
+    <div class="card-header bg-primary text-white">
+      Enregistrer une transaction manuelle
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        {{ form_transaction.hidden_tag() }}
+        <input type="hidden" name="form_name" value="manual_transaction">
+        <input type="hidden" name="portfolio_id" value="{{ selected_portfolio.id }}">
+  
+        <div class="mb-3">
+          {{ form_transaction.stock_symbol.label(class="form-label") }}
+          {{ form_transaction.stock_symbol(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ form_transaction.quantity.label(class="form-label") }}
+          {{ form_transaction.quantity(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ form_transaction.price.label(class="form-label") }}
+          {{ form_transaction.price(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form_transaction.date.label(class="form-label") }}
+            {{ form_transaction.date(class="form-control") }}
+          </div>
+        <div class="mb-3">
+          {{ form_transaction.type.label(class="form-label") }}
+          {{ form_transaction.type(class="form-select") }}
+        </div>
+        <div>
+          {{ form_transaction.submit(class="btn btn-success") }}
+        </div>
+      </form>
+    </div>
+</div>
+
+<a href="{{ url_for('admin.export_transactions', portfolio_id=selected_portfolio.id) }}"
+   class="btn btn-outline-primary my-2">
+   📄 Exporter les transactions
+</a>
+
+  
+<div class="card my-4 border-success">
+    <div class="card-header bg-success text-white">
+      Enregistrer un mouvement de trésorerie
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        {{ form_cash.hidden_tag() }}
+        <input type="hidden" name="form_name" value="cash_movement">
+        {{ form_cash.portfolio_id(value=selected_portfolio.id) }}
+  
+        <div class="mb-3">
+          {{ form_cash.amount.label(class="form-label") }}
+          {{ form_cash.amount(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ form_cash.type.label(class="form-label") }}
+          {{ form_cash.type(class="form-select") }}
+        </div>
+        <div class="mb-3">
+          {{ form_cash.description.label(class="form-label") }}
+          {{ form_cash.description(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ form_cash.date.label(class="form-label") }}
+          {{ form_cash.date(class="form-control") }}
+        </div>
+        <div>
+          {{ form_cash.submit(class="btn btn-success") }}
+        </div>
+      </form>
+    </div>
+</div>
+
+<a href="{{ url_for('admin.export_cash_movements', portfolio_id=selected_portfolio.id) }}"
+   class="btn btn-outline-success my-2">
+   💰 Exporter les mouvements de trésorerie
+</a>
+
+  
+
+<!-- Script pour gérer le message de chargement -->
+
+<script>
+    function envoyerFormulaireAvecAction(actionName) {
+        const form = document.getElementById("productForm");
+        const loadingMessage = document.getElementById("loadingMessage");
+        loadingMessage.style.display = "block";
+
+        const formData = new FormData(form);
+        formData.append(actionName, "1");
+
+        fetch("{{ url_for('admin.add_product') }}", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingMessage.style.display = "none";
+            alert(data.message);
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            loadingMessage.style.display = "none";
+            alert("Erreur lors de l'envoi : " + error);
+        });
+    }
+
+    document.getElementById("submitProduct").addEventListener("click", function (e) {
+        e.preventDefault();
+        envoyerFormulaireAvecAction("submit_add");
+    });
+
+    document.querySelector("input[name='submit_reinforce']").addEventListener("click", function (e) {
+        e.preventDefault();
+        envoyerFormulaireAvecAction("submit_reinforce");
+    });
+
+    document.querySelector("input[name='submit_reduce']").addEventListener("click", function (e) {
+        e.preventDefault();
+        envoyerFormulaireAvecAction("submit_reduce");
+    });
+</script>
+<script>
+    document.querySelector("#productForm input[name='symbol']").addEventListener("change", function () {
+        const symbol = this.value.trim();
+        if (!symbol) return;
+    
+        const formData = new FormData();
+        formData.append("symbol", symbol);
+    
+        fetch("{{ url_for('admin.fill_stock_info') }}", {
+            method: "POST",
+            body: formData
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector("#productForm input[name='isin']").value = data.isin;
+                document.querySelector("#productForm input[name='name']").value = data.name;
+                document.querySelector("#productForm select[name='sector']").value = data.sector;
+                document.querySelector("#productForm input[name='max_price']").value = data.max_price ?? "";
+                document.querySelector("#productForm input[name='min_price']").value = data.min_price ?? "";
+                document.querySelector("#productForm input[name='target_price']").value = data.target_price ?? "";
+            } else {
+                console.warn(data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Erreur lors de l'auto-remplissage :", err);
+        });
+    });
+	document.getElementById("stockForm").addEventListener("submit", function(event) {
+        const requiredFields = [
+            "symbol", "isin", "name", "sector", "current_price"
+        ];
+        let formValid = true;
+        let firstInvalidField = null;
+
+        requiredFields.forEach(function(fieldName) {
+            const field = document.querySelector(`#stockForm [name="${fieldName}"]`);
+            if (field && !field.value.trim()) {
+                formValid = false;
+                field.classList.add("is-invalid");
+                if (!firstInvalidField) firstInvalidField = field;
+            } else if (field) {
+                field.classList.remove("is-invalid");
+            }
+        });
+
+        if (!formValid) {
+            event.preventDefault(); // Empêche l'envoi du formulaire
+            alert("Merci de remplir tous les champs obligatoires.");
+            if (firstInvalidField) {
+                firstInvalidField.focus();
+            }
+        }
+    });
+    document.getElementById("restartSchedulerForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    fetch("{{ url_for('admin.restart_scheduler') }}", {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const messageDiv = document.getElementById("schedulerMessage");
+        messageDiv.innerText = data.message;
+        messageDiv.className = data.success ? "alert alert-success" : "alert alert-danger";
+    })
+    .catch(err => {
+        document.getElementById("schedulerMessage").innerText = "❌ Erreur réseau.";
+        document.getElementById("schedulerMessage").className = "alert alert-danger";
+    });
+});
+    </script>
+
+{% endblock %}

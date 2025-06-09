@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Admin - Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="my-4">🔐 Réinitialisation des mots de passe</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <table class="table table-hover table-bordered">
+    <thead>
+      <tr><th>Email</th><th>Nom</th><th>Réinitialiser</th></tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.email }}</td>
+        <td>{{ user.username }}</td>
+        <td>
+          <form method="POST" class="d-flex" style="gap: 10px;">
+            <input type="hidden" name="user_id" value="{{ user.id }}">
+            <input type="password" name="new_password" placeholder="Nouveau mot de passe" class="form-control" required>
+            <button type="submit" class="btn btn-warning">Réinitialiser</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('admin.admin') }}" class="btn btn-secondary mt-4">⬅ Retour à l'administration</a>
+</div>
+{% endblock %}

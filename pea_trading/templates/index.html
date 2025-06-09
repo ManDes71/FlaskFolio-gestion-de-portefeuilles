@@ -1,0 +1,144 @@
+<!--pea_trading\templates\index.html -->
+{% extends "base.html" %}
+
+{% block title %}Portefeuille - {{ portfolio.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h2>Portefeuille  - {{ portfolio.name }}</h2>
+                {% if current_user.is_authenticated %}
+                        <small>Vous êtes connecté.</small>
+                    {% endif %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>Valeur totale: {{ "%.2f"|format(portfolio.calculate_total_value()) }}€</h4>
+                    <small>Dernière mise à jour: {{ portfolio.positions[0].stock.last_updated.strftime('%d/%m/%Y %H:%M') if portfolio.positions else 'N/A' }}</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Symbole</th>
+                                <th>Nom</th>
+                                <th>Secteur</th>
+                                <th>Quantité</th>
+                                <th>Prix d'achat</th>
+                                <th>Prix actuel</th>
+                                <th>Variation</th>
+                                <th>Valeur</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for position in positions %}
+                            {% set performance = position.calculate_position_performance() %}
+                            <tr>
+                                <td>{{ position.stock.symbol }}</td>
+                                <td>{{ position.stock.name }}</td>
+                                <td>{{ position.stock.sector }}</td>
+                                <td>{{ position.quantity }}</td>
+                                <td>{{ "%.2f"|format(position.purchase_price) }}€</td>
+                                <td>{{ "%.2f"|format(position.stock.current_price) }}€</td>
+                                <td class="{% if performance %}{{ 'text-success' if performance.percent_gain > 0 else 'text-danger' }}{% else %}text-muted{% endif %}">
+                                    {% if performance %}
+                                        {{ "%.2f"|format(performance.percent_gain) }}%
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ "%.2f"|format(performance.current_value) }}€</td>
+                                <td>
+                                    <a href="{{ url_for('portfolios.stock_history', symbol=position.stock.symbol) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        Historique
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Répartition sectorielle</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="sectorChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Top 5 Positions</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="topPositionsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Graphique des secteurs
+    const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+    new Chart(sectorCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ sector_labels | default([]) | tojson }},
+            datasets: [{
+                data: {{ sector_values | default([]) | tojson  }},
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                    '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF9F40'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    // Graphique des top positions
+    const positionsCtx = document.getElementById('topPositionsChart').getContext('2d');
+    new Chart(positionsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ top_positions_labels | default([]) | tojson }},
+            datasets: [{
+                label: 'Valeur en €',
+                data: {{top_positions_values | default([]) | tojson }},
+                backgroundColor: '#36A2EB'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Mouvements de Trésorerie{% endblock %}
+{% block content %}
+
+  
+  <h2 class="mb-4">💰 Historique des Mouvements de Trésorerie</h2>
+
+  <div class="card p-3 mb-4 border-secondary">
+    <form method="GET" class="row g-3 align-items-center">
+      <div class="col-auto">
+        <label for="portfolioSelect" class="col-form-label">Portefeuille :</label>
+      </div>
+      <div class="col-auto">
+        <select name="portfolio_id" id="portfolioSelect" class="form-select">
+          <option value="">Tous</option>
+          {% for p in portfolios %}
+            <option value="{{ p.id }}" {% if selected_portfolio_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{{ url_for(request.endpoint) }}">Réinitialiser</a>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-success" href="{{ url_for('admin.export_public_cash_csv', portfolio_id=selected_portfolio_id) }}">📁 Export CSV</a>
+      </div>
+    </form>
+  </div>
+  
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Date</th><th>Type</th><th>Montant</th><th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for mv in movements.items %}
+      <tr>
+        <td>{{ mv.date.strftime('%d/%m/%Y') }}</td>
+        <td>{{ mv.type }}</td>
+        <td>{{ "%.2f"|format(mv.amount) }} €</td>
+        <td>{{ mv.description or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  {% set pagination = movements %}
+  {% include "pagination.html" %}
+  
+  <hr>
+  {% set solde = namespace(value=0) %}
+  {% for mv in movements.items %}
+    {% set solde.value = solde.value + mv.amount %}
+  {% endfor %}
+  <p class="fw-bold">📈 Solde total affiché : {{ "%.2f"|format(solde.value) }} €</p>
+  
+  <canvas id="movementPieChart" height="150"></canvas>
+  {% endblock %}
+  
+  {% block scripts %}
+  <script>
+    const ctx = document.getElementById('movementPieChart');
+    const pieData = {
+      labels: [
+        {% for group in movements.items|groupby('type') %}
+          "{{ group.grouper }}",
+        {% endfor %}
+      ],
+      datasets: [{
+        label: 'Répartition des mouvements',
+        data: [
+          {% for group in movements.items|groupby('type') %}
+            {{ group.list | length }},
+          {% endfor %}
+        ],
+        borderWidth: 1
+      }]
+    };
+  
+    new Chart(ctx, {
+      type: 'pie',
+      data: pieData,
+    });
+  </script>
+
+{% endblock %}

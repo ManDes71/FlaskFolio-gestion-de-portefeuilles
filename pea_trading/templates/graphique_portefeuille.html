@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block title %}Graphique Portefeuille{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">
+  📊 Évolution du Portefeuille
+  {% if selected_portfolio %}
+    : <span class="text-primary">{{ selected_portfolio.name }}</span>
+  {% endif %}
+</h2>
+<div class="flex gap-2 mb-4">
+  <button class="btn btn-outline-primary" onclick="filtrerPeriode(30)">1M</button>
+  <button class="btn btn-outline-primary" onclick="filtrerPeriode(90)">3M</button>
+  <button class="btn btn-outline-primary" onclick="filtrerPeriode(180)">6M</button>
+  <button class="btn btn-outline-primary" onclick="filtrerPeriode(365)">1A</button>
+  <button class="btn btn-outline-primary" onclick="filtrerPeriode('max')">Max</button>
+  <button class="btn btn-outline-primary" onclick="filtrerPeriode(null)">YTD</button>
+  <button class="btn btn-secondary" onclick="exporterGraphique()">📸 Exporter en image</button>
+  <button class="btn btn-warning" onclick="recalculerValeurs()">🔄 Recalculer</button>
+  <button class="btn btn-outline-dark" onclick="toggleAnnotations()">🖍️ Annotations</button>
+</div>
+
+<div class="card p-4 w-100">
+  <canvas id="historiqueChart" style="height: 500px; width: 100%;"></canvas>
+</div>
+
+<div id="loading" class="alert alert-info d-none mt-3">
+    ⏳ Calcul en cours... Veuillez patienter...
+  </div>
+  
+
+<div id="statsContainer" class="mt-6 p-4 bg-gray-100 rounded shadow">
+  <h4 class="text-lg font-bold mb-2">📊 Statistiques du portefeuille</h4>
+  <ul id="stats" class="list-disc pl-5 text-sm text-gray-800"></ul>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+<script>
+let fullData = [];
+let chart;
+let showAnnotations = false;
+
+
+function exporterGraphique() {
+  const canvas = document.getElementById('historiqueChart');
+  const url = canvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = `graphique_portefeuille_${new Date().toISOString().split('T')[0]}.png`;
+  link.href = url;
+  link.click();
+}
+
+function calculerSMA(data, key, windowSize = 45) {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < windowSize - 1) {
+      result.push(null);
+    } else {
+      const slice = data.slice(i - windowSize + 1, i + 1);
+      const sum = slice.reduce((acc, val) => acc + parseFloat(val[key]), 0);
+      result.push(sum / windowSize);
+    }
+  }
+  return result;
+}
+
+function afficherStats(data) {
+  if (!data.length) return;
+  const debut = data[0].valeur_totale;
+  const fin = data.at(-1).valeur_totale;
+  const variation = (((fin - debut) / debut) * 100).toFixed(2);
+
+  const valeurs = data.map(e => e.valeur_totale);
+  let max = valeurs[0], drawdown = 0;
+  valeurs.forEach(v => {
+    if (v > max) max = v;
+    drawdown = Math.min(drawdown, (v - max) / max);
+  });
+
+  let maxGain = 0;
+  for (let i = 1; i < valeurs.length; i++) {
+    const gain = (valeurs[i] - valeurs[i-1]) / valeurs[i-1];
+    maxGain = Math.max(maxGain, gain);
+  }
+
+  const stats = [
+    `📈 Performance totale : ${variation}%`,
+    `💵 Valeur actuelle : ${fin.toFixed(2)} €`,
+    `📉 Drawdown max : ${(drawdown * 100).toFixed(2)}%`,
+    `🚀 Meilleure progression journalière : ${(maxGain * 100).toFixed(2)}%`,
+    `📅 Durée : ${data.length} jours`
+  ];
+
+  const list = document.getElementById("stats");
+  list.innerHTML = stats.map(s => `<li>${s}</li>`).join("");
+}
+
+function majGraph(data) {
+  const labels = data.map(entry => entry.date);
+  const total = data.map(entry => entry.valeur_totale);
+  const titres = data.map(entry => entry.valeur_titres);
+  const liquidite = data.map(entry => entry.liquidite);
+  const moyenne = calculerSMA(data, 'valeur_totale');
+  afficherStats(data);
+
+  const annotations = {};
+  data.forEach((entry, i) => {
+    if (entry.transactions && entry.transactions.length > 0) {
+      entry.transactions.forEach((tx, idx) => {
+        annotations[`tx_${i}_${idx}`] = {
+          type: 'line',
+          scaleID: 'x',
+          value: entry.date,
+          borderColor: tx.type === 'vente' ? 'red' : 'green',
+          borderWidth: 1,
+          label: {
+            enabled: true,
+            content: `${tx.type === 'vente' ? '🟥 Vente' : '🟩 Achat'} ${tx.quantite}x ${tx.symbol} @${tx.prix}€`,
+            position: 'start',
+            rotation: -90,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: '#fff',
+            font: { size: 10 },
+            yAdjust: -20
+          }
+        };
+      });
+    }
+    if (entry.versement) {
+      annotations[`versement_${i}`] = {
+        type: 'line',
+        scaleID: 'x',
+        value: entry.date,
+        borderColor: 'purple',
+        borderWidth: 1,
+        label: {
+          enabled: true,
+          content: `💶 Versement ${entry.versement.montant}€`,
+          position: 'end',
+          rotation: -90,
+          backgroundColor: 'rgba(128,0,128,0.7)',
+          color: '#fff',
+          font: { size: 10 },
+          yAdjust: 20
+        }
+      };
+    }
+    if (entry.dividende) {
+      annotations[`dividende_${i}`] = {
+        type: 'line',
+        scaleID: 'x',
+        value: entry.date,
+        borderColor: 'gold',
+        borderWidth: 1,
+        label: {
+          enabled: true,
+          content: `💰 Dividende ${entry.dividende.montant}€`,
+          position: 'end',
+          rotation: -90,
+          backgroundColor: 'rgba(255, 215, 0, 0.8)',
+          color: '#000',
+          font: { size: 10 },
+          yAdjust: 40
+        }
+      };
+}
+
+  });
+
+  const ctx = document.getElementById('historiqueChart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Valeur Totale',
+          data: total,
+          borderColor: 'green',
+          backgroundColor: 'rgba(0, 128, 0, 0.1)',
+          tension: 0.2,
+          fill: true
+        },
+        {
+          label: 'Valeur Titres',
+          data: titres,
+          borderColor: 'blue',
+          backgroundColor: 'rgba(0, 0, 255, 0.1)',
+          tension: 0.2,
+          fill: true
+        },
+        {
+          label: 'Liquidité',
+          data: liquidite,
+          borderColor: 'orange',
+          backgroundColor: 'rgba(255, 165, 0, 0.1)',
+          tension: 0.2,
+          fill: true
+        },
+        {
+          label: 'Moyenne Mobile 45j',
+          data: moyenne,
+          borderColor: 'gray',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0,
+          tension: 0.1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      stacked: false,
+      plugins: {
+        title: { display: true, text: 'Historique de la valeur du portefeuille' },
+        annotation: { annotations: showAnnotations ? annotations : {} }
+
+      },
+      scales: {
+        y: { beginAtZero: false }
+      }
+    },
+    plugins: [Chart.registry.getPlugin('annotation')]
+  });
+}
+
+
+function toggleAnnotations() {
+  showAnnotations = !showAnnotations;
+  majGraph(fullData);
+}
+
+
+function filtrerPeriode(jours) {
+    if (jours === 'max') return majGraph(fullData);
+
+    if (jours === null) {
+    const currentYear = new Date().getFullYear();
+    const debut = new Date(currentYear, 0, 1);
+    const filtered = fullData.filter(e => new Date(e.date) >= debut);
+    return majGraph(filtered);
+}
+  const fin = new Date(fullData.at(-1).date);
+  const debut = new Date(fin);
+  debut.setDate(debut.getDate() - jours);
+  const filtered = fullData.filter(e => new Date(e.date) >= debut);
+  majGraph(filtered);
+}
+
+fetch("{{ url_for('portfolios.api_historique_portefeuille') }}")
+  .then(res => res.json())
+  .then(data => {
+    fullData = data;
+    majGraph(fullData);
+    console.log("Dernière date chargée :", fullData.at(-1).date);
+  });
+
+function recalculerValeurs() {
+  fetch("{{ url_for('portfolios.recalculer_valeurs') }}")
+    .then(res => res.text())
+    .then(msg => {
+      alert(msg); // ou utiliser toast si tu préfères
+      location.reload();
+    });
+}
+ 
+function recalculerValeurs() {
+  const loader = document.getElementById("loading");
+  loader.classList.remove("d-none");
+
+  fetch("{{ url_for('portfolios.recalculer_valeurs') }}")
+    .then(res => res.text())
+    .then(msg => {
+      alert(msg);
+      loader.classList.add("d-none");
+      location.reload();
+    });
+}
+
+
+</script>
+
+{% endblock %}

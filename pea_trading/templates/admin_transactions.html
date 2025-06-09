@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Admin - Transactions{% endblock %}
+{% block content %}
+<form method="GET" class="row g-3 align-items-center mb-4">
+    <div class="col-auto">
+        <label for="portfolioSelect" class="col-form-label">Portefeuille :</label>
+    </div>
+    <div class="col-auto">
+        <select name="portfolio_id" id="portfolioSelect" class="form-select">
+            <option value="">Tous</option>
+            {% for p in portfolios %}
+                <option value="{{ p.id }}" {% if selected_portfolio_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+    </div>
+    <div class="col-auto">
+        <a class="btn btn-success" href="{{ url_for('admin.export_transactions', portfolio_id=selected_portfolio_id) }}">📁 Export CSV</a>
+    </div>
+</form>
+
+<h2 class="mb-4">📄 Toutes les transactions (admin)</h2>
+
+<table class="table table-hover table-bordered">
+    <thead>
+        <tr>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Symbole</th>
+            <th>Nom</th>
+            <th>Quantité</th>
+            <th>Prix</th>
+            <th>Montant</th>
+        </tr>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tx in transactions.items %}
+        <tr>
+            <td>{{ tx.date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ tx.type }}</td>
+            <td>{{ tx.stock.symbol }}</td>
+            <td>{{ tx.stock.name }}</td>
+            <td>{{ tx.quantity }}</td>
+            <td>{{ "%.2f"|format(tx.price) }} €</td>
+            <td>{{ "%.2f"|format(tx.price * tx.quantity) }} €</td>
+            <td>
+                <!-- Modifier -->
+                <a href="{{ url_for('admin.edit_transaction', transaction_id=tx.id) }}" class="btn btn-sm btn-warning">✏️</a>
+                <!-- Supprimer avec modale -->
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ tx.id }}">
+                    🗑️
+                </button>
+                <!-- Modale Bootstrap -->
+                <div class="modal fade" id="confirmDeleteModal{{ tx.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ tx.id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="confirmDeleteLabel{{ tx.id }}">Confirmer la suppression</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                      </div>
+                      <div class="modal-body">
+                        Supprimer la transaction <strong>{{ tx.stock.symbol }}</strong> du {{ tx.date.strftime('%d/%m/%Y') }} ?
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <form method="POST" action="{{ url_for('admin.delete_transaction', transaction_id=tx.id) }}">
+                          <button type="submit" class="btn btn-danger">Supprimer</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% set pagination = transactions %}
+{% include "pagination.html" %}
+{% endblock %}

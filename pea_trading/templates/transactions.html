@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Toutes les Transactions{% endblock %}
+{% block content %}
+
+  
+  <h2 class="mb-4">📄 Toutes les Transactions</h2>
+
+  <div class="card p-3 mb-4 border-secondary">
+    <form method="GET" class="row g-3 align-items-center">
+      <div class="col-auto">
+        <label for="portfolioSelect" class="col-form-label">Portefeuille :</label>
+      </div>
+      <div class="col-auto">
+        <select name="portfolio_id" id="portfolioSelect" class="form-select">
+          <option value="">Tous</option>
+          {% for p in portfolios %}
+            <option value="{{ p.id }}" {% if selected_portfolio_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{{ url_for(request.endpoint) }}">Réinitialiser</a>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-success" href="{{ url_for('admin.export_public_transactions_csv', portfolio_id=selected_portfolio_id) }}">📁 Export CSV</a>
+      </div>
+    </form>
+  </div>
+  
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Symbole</th>
+        <th>Nom</th>
+        <th>Quantité</th>
+        <th>Prix</th>
+        <th>Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in transactions.items %}
+      <tr>
+        <td>{{ tx.date.strftime('%d/%m/%Y') }}</td>
+        <td>{{ tx.type }}</td>
+        <td>{{ tx.stock.symbol }}</td>
+        <td>{{ tx.stock.name }}</td>
+        <td>{{ tx.quantity }}</td>
+        <td>{{ "%.2f"|format(tx.price) }} €</td>
+        <td>{{ "%.2f"|format(tx.price * tx.quantity) }} €</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  {% set pagination = transactions %}
+  {% include "pagination.html" %}
+  
+  <hr>
+  {% set total = namespace(value=0) %}
+{% for tx in transactions.items %}
+  {% if tx.type == 'achat' %}
+    {% set total.value = total.value - (tx.price * tx.quantity) %}
+  {% elif tx.type == 'vente' %}
+    {% set total.value = total.value + (tx.price * tx.quantity) %}
+  {% endif %}
+{% endfor %}
+<p class="fw-bold">💶 Solde des transactions affichées : {{ "%.2f"|format(total.value) }} €</p>
+
+  
+  <canvas id="typePieChart" height="150"></canvas>
+  {% endblock %}
+  
+  {% block scripts %}
+  <script>
+    const ctx = document.getElementById('typePieChart');
+    const pieData = {
+      labels: [
+        {% for group in transactions.items|groupby('type') %}
+          "{{ group.grouper }}",
+        {% endfor %}
+      ],
+      datasets: [{
+        label: 'Répartition des types',
+        data: [
+          {% for group in transactions.items|groupby('type') %}
+            {{ group.list | length }},
+          {% endfor %}
+        ],
+        borderWidth: 1
+      }]
+    };
+  
+    new Chart(ctx, {
+      type: 'pie',
+      data: pieData,
+    });
+  </script>
+{% endblock %}

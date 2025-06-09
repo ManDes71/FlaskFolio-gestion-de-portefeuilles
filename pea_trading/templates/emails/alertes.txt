@@ -1,0 +1,17 @@
+Alerte(s) détectée(s) pour le portefeuille {{ portfolio.name }} :
+
+{% if alertes_vente %}
+VENTE :
+{% for stock in alertes_vente %}
+- {{ stock.name }} ({{ stock.symbol }}) – {{ "%.2f"|format(stock.current_price) }}€
+{% endfor %}
+{% endif %}
+
+{% if alertes_achat %}
+ACHAT :
+{% for stock in alertes_achat %}
+- {{ stock.name }} ({{ stock.symbol }}) – {{ "%.2f"|format(stock.current_price) }}€
+{% endfor %}
+{% endif %}
+
+Accédez à vos portefeuilles : {{ url_for('portfolios.list_portfolios', _external=True) }}

@@ -1,0 +1,49 @@
+Date,Type,Montant,Description
+2020-04-02,versement,11000.0,Versement initial
+2020-04-03,achat,-460.16,Achat manuel(le) de 4x AI.PA
+2020-06-26,achat,-999.0,Achat manuel(le) de 50x VIE.PA
+2020-07-23,achat,-827.0,Achat manuel(le) de 25x TTE.PA
+2020-12-11,achat,-477.42,Achat manuel(le) de 6x GTT.PA
+2021-05-12,dividende,35.0,coupon VIE.PA - VEOLIA ENVIRON.
+2021-05-17,achat,-1643.84,Achat manuel(le) de 11x SOI.PA
+2021-05-17,achat,-434.0,Achat manuel(le) de 200x VMX.PA
+2021-05-19,dividende,11.0,coupon AI.PA - AIR LIQUIDE
+2021-09-21,dividende,16.5,coupons TTE.PA - TOTALENERGIES
+2021-11-03,dividende,8.1,coupons  GTT.PA - Gaztransport & Technigaz SA
+2022-03-07,achat,-459.5,Achat manuel(le) de 5x AIR.PA
+2022-03-22,dividende,16.5,coupons TTE.PA - TOTALENERGIES
+2022-04-19,dividende,6.38,coupons AIR.PA - AIRBUS
+2022-05-16,dividende,11.6,coupons AI.PA - AIR LIQUIDE
+2022-06-06,dividende,10.5,coupons GTT.PA - Gaztransport & Technigaz SA
+2022-06-21,dividende,16.5,coupons TTE.PA - TOTALENERGIES
+2022-07-05,dividende,50.0,coupons VIE.PA - VEOLIA ENVIRON.
+2022-09-21,dividende,17.25,coupons TTE.PA - TOTALENERGIES
+2023-03-22,dividende,17.25,coupons TTE.PA - TOTALENERGIES
+2023-04-25,dividende,7.65,coupons AIR.PA - AIRBUS
+2023-05-09,dividende,56.0,coupons VIE.PA - VEOLIA ENVIRON.
+2023-05-15,dividende,11.8,coupons AI.PA - AIR LIQUIDE
+2023-06-12,dividende,9.3,coupons GTT.PA - Gaztransport & Technigaz SA
+2023-06-21,dividende,18.5,coupons TTE.PA - TOTALENERGIES
+2023-09-20,dividende,18.5,coupons TTE.PA - TOTALENERGIES
+2024-03-20,dividende,18.5,coupons TTE.PA - TOTALENERGIES
+2024-04-16,dividende,11.9,coupons AIR.PA - AIRBUS
+2024-05-08,dividende,62.5,coupons VIE.PA - VEOLIA ENVIRON.
+2024-05-20,dividende,12.8,coupons AI.PA - AIR LIQUIDE
+2024-06-18,dividende,15.06,coupons GTT.PA - Gaztransport & Technigaz SA
+2024-06-19,dividende,19.75,coupons TTE.PA - TOTALENERGIES
+2024-09-25,dividende,19.75,coupons TTE.PA - TOTALENERGIES
+2024-12-10,dividende,22.02,coupons GTT.PA - Gaztransport & Technigaz SA
+2025-01-02,dividende,19.75,coupons TTE.PA - TOTALENERGIES
+2025-01-27,achat,-866.9,Achat de 10 TEP.PA
+2025-02-03,achat,-645.1,Achat manuel(le) de 10x BNP.PA
+2025-03-10,achat,-759.03,Achat manuel(le) de 3x SAF.PA
+2025-03-17,achat,-740.4,Achat manuel(le) de 5x CAP.PA
+2025-03-18,vente,509.08,Vente complète de 11x SOI.PA (suppression)
+2025-03-21,achat,-747.95,Achat manuel(le) de 7x SAN.PA
+2025-03-21,achat,-724.56,Achat manuel(le) de 3x HO.PA
+2025-04-01,vente,839.4,Vente complète de 6x GTT.PA (suppression)
+2025-04-03,achat,-847.56,Achat de 3 AM.PA
+2025-04-10,achat,-753.42,Achat de 3 EL.PA
+2025-04-30,vente,661.64,Vente complète de 7x SAN.PA (suppression)
+2025-05-13,achat,-714.4,Achat de 40 ENGI.PA
+2025-05-16,achat,-835.0,Achat de 20 CS.PA

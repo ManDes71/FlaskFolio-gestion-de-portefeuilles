@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier {{ stock.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Modifier {{ stock.name }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.symbol.label(class="form-label") }}
+            {{ form.symbol(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.isin.label(class="form-label") }}
+            {{ form.isin(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.sector.label(class="form-label") }}
+            {{ form.sector(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.current_price.label(class="form-label") }}
+            {{ form.current_price(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.max_price.label(class="form-label") }}
+            {{ form.max_price(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.min_price.label(class="form-label") }}
+            {{ form.min_price(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.target_price.label(class="form-label") }}
+            {{ form.target_price(class="form-control") }}
+        </div>
+        
+        <button type="submit" class="btn btn-success">Enregistrer les modifications</button>
+        <a href="{{ url_for('admin.admin_valeurs') }}" class="btn btn-secondary">Annuler</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,535 @@
+<!--pea_trading\templates\stock_history.html -->
+{% extends "base.html" %}
+
+{% block title %}Historique - {{ stock.symbol }}{% endblock %}
+
+{% block content %}
+
+
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>{{ stock.name }} ({{ stock.symbol }})</h2>
+            <div>
+                <span class="badge bg-secondary">Secteur: {{ stock.sector }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            {% if purchase_price %}
+            <div class="col-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Prix d'achat</h5>
+                        <p class="card-text h3">{{ "%.2f"|format(purchase_price) }}€</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="col-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Prix actuel</h5>
+                        <p class="card-text h3">{{ "%.2f"|format(stock.current_price) }}€</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Variation 1 mois</h5>
+                        {% if monthly_change is not none %}
+                        <p class="card-text h3 {{ 'text-success' if monthly_change > 0 else 'text-danger' }}">
+                            {{ "%.2f"|format(monthly_change) }}%
+                        </p>
+                        {% else %}
+                            <p class="card-text h3 text-muted">Données insuffisantes</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Volume moyen</h5>
+                        <p class="card-text h3">{{ "{:,}".format(avg_volume | int) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Volatilité</h5>
+                        <p class="card-text h3">{{ "%.2f"|format(volatility) }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <button id="btn-1M"type="button" class="btn btn-outline-primary" onclick="updateChart('1M')">1M</button>
+                    <button id="btn-3M"type="button" class="btn btn-outline-primary" onclick="updateChart('3M')">3M</button>
+                    <button id="btn-6M"type="button" class="btn btn-outline-primary" onclick="updateChart('6M')">6M</button>
+                    <button id="btn-1Y" type="button" class="btn btn-outline-primary" onclick="updateChart('1Y')">1A</button>
+                    <button id="btn-2Y" type="button" class="btn btn-outline-primary" onclick="updateChart('2Y')">2A</button>
+                </div>
+                <button type="button" class="btn btn-outline-secondary ms-3" onclick="toggleView()">
+                    <span id="viewToggleText">Voir le tableau</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div id="chartView">
+                    <canvas id="priceChart"></canvas>
+                </div>
+                <div id="tableView" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Ouverture</th>
+                                    <th>Plus Haut</th>
+                                    <th>Plus Bas</th>
+                                    <th>Clôture</th>
+                                    <th>Volume</th>
+                                    <th>Variation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for history in historical_data %}
+                                {% set daily_change = ((history.close_price - history.open_price) / history.open_price * 100) %}
+                                <tr>
+                                    <td>{{ history.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ "%.2f"|format(history.open_price) }}€</td>
+                                    <td>{{ "%.2f"|format(history.high_price) }}€</td>
+                                    <td>{{ "%.2f"|format(history.low_price) }}€</td>
+                                    <td>{{ "%.2f"|format(history.close_price) }}€</td>
+                                    <td>{{ "{:,}".format(history.volume) }}</td>
+                                    <td class="{{ 'text-success' if daily_change > 0 else 'text-danger' }}">
+                                        {{ "%.2f"|format(daily_change) }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header">Indicateur Ichimoku Kinko Hyo</div>
+            <div class="card-body">
+                <canvas id="ichimokuChart" height="500" style="display: block; width: 100%; max-width: 100%;background-color: rgba(206, 73, 73, 0.1); border: 1px dashed gray;"></canvas>
+            </div>
+        </div>        
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let priceChart;
+let ichimokuChart;
+console.log("Dates :", {{ dates|tojson }});
+console.log("Prices :", {{ prices|tojson }});
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const priceCtx = document.getElementById('priceChart').getContext('2d');
+    // Décalage de 26 périodes pour le nuage Ichimoku
+    const offset = 26;
+    // const spanLabels = [...data.dates, ...Array(offset).fill("")].slice(offset);
+
+    priceChart = new Chart(priceCtx, {
+        type: 'line',
+        data: {
+            labels: {{ dates|tojson }},
+            datasets: [{
+                label: 'Prix',
+                data: {{ prices|tojson }},
+                borderColor: '#36A2EB',
+                tension: 0.1
+            },
+            {
+                label: 'MM20',
+                data: {{ mm20|tojson }},
+                borderColor: 'purple',
+                borderDash: [2, 2],
+                pointRadius: 0,
+                tension: 0.1,
+                fill: false
+            },
+            {% if max_price %}
+            {
+                label: 'Borne Max',
+                data: Array({{ dates|length }}).fill({{ max_price }}),
+                borderColor: 'green',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            },
+            {% endif %}
+            {% if min_price %}
+            {
+                label: 'Borne Min',
+                data: Array({{ dates|length }}).fill({{ min_price }}),
+                borderColor: 'red',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            },
+            {% endif %}
+            {% if target_price %}
+            {
+                label: 'Objectif',
+                data: Array({{ dates|length }}).fill({{ target_price }}),
+                borderColor: 'blue',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            },
+            {% endif %}
+            {% if purchase_price %}
+            {
+                label: 'Prix d\'achat',
+                data: Array({{ dates|length }}).fill({{ purchase_price }}),
+                borderColor: 'orange',
+                borderDash: [10,5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            }
+            {% endif %}
+
+        ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y}€`;
+                        }
+                    }
+                }
+            }
+
+            
+        }
+    });
+    updateChart('1Y');
+});
+
+function updateChart(period) {
+    fetch(`/api/stock/${encodeURIComponent('{{ stock.symbol }}')}/history/${period}`)
+        .then(response => response.json())
+        .then(data => {
+            const dates = data.dates;
+            const prices = data.prices;
+            // Calcul MM20
+            let mm20 = [];
+            if (prices.length >= 20) {
+                for (let i = 0; i < prices.length; i++) {
+                    if (i < 19) {
+                        mm20.push(null);
+                    } else {
+                        let slice = prices.slice(i - 19, i + 1);
+                        let sum = slice.reduce((a, b) => a + b, 0);
+                        mm20.push(sum / 20);
+                    }
+                }
+            }
+
+
+            priceChart.data.labels = dates;
+
+            const newDatasets = [
+                {
+                    label: 'Prix',
+                    data: prices,
+                    borderColor: '#36A2EB',
+                    tension: 0.1
+                }
+            ];
+
+            newDatasets.push({
+                label: 'MM20',
+                data: mm20,
+                borderColor: 'purple',
+                borderDash: [2, 2],
+                pointRadius: 0,
+                tension: 0.1,
+                fill: false
+            });
+
+
+            {% if max_price %}
+            newDatasets.push({
+                label: 'Borne Max',
+                data: Array(dates.length).fill({{ max_price }}),
+                borderColor: 'green',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            });
+            {% endif %}
+
+            {% if min_price %}
+            newDatasets.push({
+                label: 'Borne Min',
+                data: Array(dates.length).fill({{ min_price }}),
+                borderColor: 'red',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            });
+            {% endif %}
+
+            {% if target_price %}
+            newDatasets.push({
+                label: 'Objectif',
+                data: Array(dates.length).fill({{ target_price }}),
+                borderColor: 'blue',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            });
+            {% endif %}
+            {% if purchase_price %}
+            newDatasets.push({
+                label: 'Prix d\'achat',
+                data: Array(dates.length).fill({{ purchase_price }}),
+                borderColor: 'orange',
+                borderDash: [10,5],
+                pointRadius: 0,
+                tension: 0,
+                fill: false
+            });
+            {% endif %}
+
+
+            priceChart.data.datasets = newDatasets;
+            priceChart.update();
+
+            // Mettre à jour le tableau aussi
+            updateTable(period);
+        });
+        updateIchimoku(period);
+    // Reset boutons
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    // Activer celui cliqué
+    const activeBtn = document.getElementById(`btn-${period}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+
+}
+
+function updateIchimoku(period) {
+    fetch(`/api/stock/{{ stock.symbol }}/ichimoku/${period}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Ichimoku data:", data); // Debug utile
+            
+
+            const ctx = document.getElementById('ichimokuChart').getContext('2d');
+            if (ichimokuChart) ichimokuChart.destroy();
+
+            const offset = 26;
+            const dates = data.dates; 
+
+            const toXY = (arr) =>
+                arr.map((y, i) => ({ x: dates[i], y }))
+                .filter(point => point.x !== undefined && point.y !== null);
+
+            // Décale Senkou Span A et B de 26 jours vers le futur
+            const shiftedSpanA = data.senkouA.map((val, i) => ({
+                x: addDays(new Date(dates[i]), 26),
+                y: val
+            }));
+
+            const shiftedSpanB = data.senkouB.map((val, i) => ({
+                x: addDays(new Date(dates[i]), 26),
+                y: val
+            }));
+
+            // Fonction utilitaire
+            function addDays(date, days) {
+                const newDate = new Date(date);
+                newDate.setDate(newDate.getDate() + days);
+                return newDate;
+}
+
+
+            console.log("toXY", toXY(data.tenkan));
+            console.log("X range:", dates[0], dates[dates.length - 1]);
+            console.log("Clôture:", toXY(data.closePrices));
+
+            const allDatasets = [
+                {
+                    label: 'Clôture',
+                    data: toXY(data.closePrices),
+                    borderColor: 'gray',
+                    borderWidth: 1,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Tenkan-sen',
+                    data: toXY(data.tenkan),
+                    borderColor: 'blue',
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Kijun-sen',
+                    data: toXY(data.kijun),
+                    borderColor: 'red',
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Senkou Span A',
+                    data: shiftedSpanA,
+                    borderColor: 'green',
+                    backgroundColor: 'rgba(173, 216, 230, 0.2)',
+                    borderDash: [5, 5],
+                    fill: '+1',
+                    pointRadius: 0
+                },
+                {
+                    label: 'Senkou Span B',
+                    data: shiftedSpanB,
+                    borderColor: 'orange',
+                    backgroundColor: 'rgba(173, 216, 230, 0.2)',
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Chikou Span',
+                    data: toXY(data.chikou),
+                    borderColor: 'purple',
+                    borderWidth: 1,
+                    pointRadius: 0
+                }
+            ];
+
+console.log("🧪 Datasets prêt à injecter :", allDatasets);
+
+
+            ichimokuChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels:dates,
+                    datasets: allDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,  // plus le ratio est élevé, plus le graphique sera large par rapport à sa hauteur
+                    parsing: true,
+                    scales: {
+                        x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'yyyy-MM-dd'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                        },
+                        y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Prix (€)'
+                        }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+            //console.log(ichimokuChart)
+            console.log("Final datasets:", ichimokuChart.data.datasets);
+        });
+}
+
+
+function updateTable(period) {
+    fetch(`/api/stock/${encodeURIComponent('{{ stock.symbol }}')}/history/${period}?format=table`)
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector('#tableView tbody');
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td>${formatDate(row.date)}</td>
+                    <td>${formatPrice(row.open_price)}</td>
+                    <td>${formatPrice(row.high_price)}</td>
+                    <td>${formatPrice(row.low_price)}</td>
+                    <td>${formatPrice(row.close_price)}</td>
+                    <td>${formatNumber(row.volume)}</td>
+                    <td class="${row.daily_change >= 0 ? 'text-success' : 'text-danger'}">
+                        ${formatPercent(row.daily_change)}
+                    </td>
+                </tr>
+            `).join('');
+        });
+}
+
+function toggleView() {
+    const chartView = document.getElementById('chartView');
+    const tableView = document.getElementById('tableView');
+    const toggleText = document.getElementById('viewToggleText');
+    
+    if (chartView.classList.contains('d-none')) {
+        chartView.classList.remove('d-none');
+        tableView.classList.add('d-none');
+        toggleText.textContent = 'Voir le tableau';
+    } else {
+        chartView.classList.add('d-none');
+        tableView.classList.remove('d-none');
+        toggleText.textContent = 'Voir le graphique';
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR');
+}
+
+function formatPrice(price) {
+    return `${price.toFixed(2)}€`;
+}
+
+function formatNumber(num) {
+    return num.toLocaleString('fr-FR');
+}
+
+function formatPercent(value) {
+    return `${value.toFixed(2)}%`;
+}
+
+</script>
+{% endblock %}

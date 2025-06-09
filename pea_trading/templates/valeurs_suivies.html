@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Valeurs Suivies{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Valeurs Suivies</h2>
+    <a href="{{ url_for('portfolios.index', portfolio_id=session['selected_portfolio_id']) }}" class="btn btn-secondary mb-3">Retour au portefeuille</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbole</th>
+                <th>Nom</th>
+                <th>ISIN</th>
+                <th>Secteur</th>
+                <th>Prix actuel</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in stocks %}
+            <tr>
+                <td>{{ stock.symbol }}</td>
+                <td><a href="{{ url_for('portfolios.stock_history', symbol=stock.symbol) }}">{{ stock.name }}</a></td>
+                <td>{{ stock.isin }}</td>
+                <td>{{ stock.sector }}</td>
+                <td>{{ "%.2f"|format(stock.current_price) }}€</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

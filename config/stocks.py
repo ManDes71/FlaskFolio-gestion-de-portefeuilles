@@ -1,0 +1,374 @@
+"""
+Configuration des valeurs boursières à suivre
+Format des données:
+    - name: Nom de la société
+    - code: Code interne
+    - active: Actif (True) ou Veille (False)
+    - max: Prix maximum d'alerte
+    - min: Prix minimum d'alerte
+    - cost_basis: Prix de revient
+    - target: Objectif de prix
+    - isin: Code ISIN
+    - yahoo_symbol: Symbole Yahoo Finance
+    - sector: Secteur d'activité
+"""
+
+STOCKS_CONFIG = {
+        "AIR_LIQUIDE": {
+            "name": "AIR LIQUIDE",
+            "code": "AI",
+            "active": True,
+            "max": 231.06,
+            "min": 159.97,
+            "cost_basis": 177.74,
+            "target": 213.29,
+            "isin": "FR0000120073",
+            "yahoo_symbol": "AI.PA",
+            "sector": "Matériaux de base"
+        },
+        "AIRBUS": {
+            "name": "AIRBUS",
+            "code": "AIR",
+            "active": True,
+            "max": 216.37,
+            "min": 149.8,
+            "cost_basis": 166.44,
+            "target": 199.73,
+            "isin": "NL0000235190",
+            "yahoo_symbol": "AIR.PA",
+            "sector": "Industrie"
+        },
+        "ALSTOM": {
+            "name": "ALSTOM",
+            "code": "ALO",
+            "active": True,
+            "max": 30.56,
+            "min": 21.16,
+            "cost_basis": 23.51,
+            "target": 28.21,
+            "isin": "FR0010220475",
+            "yahoo_symbol": "ALO.PA",
+            "sector": "Industrie"
+        },
+        "ARCURE": {
+            "name": "ARCURE",
+            "code": "ALCUR",
+            "active": True,
+            "max": 6.79,
+            "min": 4.7,
+            "cost_basis": 5.22,
+            "target": 6.26,
+            "isin": "FR0013398997",
+            "yahoo_symbol": "ALCUR.PA",
+            "sector": "Technologie"
+        },
+        "BNP_PARIBAS_ACT.A": {
+            "name": "BNP PARIBAS ACT.A",
+            "code": "BNP",
+            "active": True,
+            "max": 104.14,
+            "min": 72.1,
+            "cost_basis": 80.11,
+            "target": 96.13,
+            "isin": "FR0000131104",
+            "yahoo_symbol": "BNP.PA",
+            "sector": "Finance"
+        },
+        "BUREAU_VERITAS": {
+            "name": "BUREAU VERITAS",
+            "code": "BVI",
+            "active": True,
+            "max": 37.05,
+            "min": 25.65,
+            "cost_basis": 28.5,
+            "target": 34.2,
+            "isin": "FR0006174348",
+            "yahoo_symbol": "BVI.PA",
+            "sector": "Industrie"
+        },
+        "CARREFOUR": {
+            "name": "CARREFOUR",
+            "code": "CA",
+            "active": True,
+            "max": 17.34,
+            "min": 12.0,
+            "cost_basis": 13.335,
+            "target": 16.0,
+            "isin": "FR0000120172",
+            "yahoo_symbol": "CA.PA",
+            "sector": "Consommation"
+        },
+        "GAZTRANSPORT_&_TECHNIGAZ_SA": {
+            "name": "Gaztransport & Technigaz SA",
+            "code": "GTT",
+            "active": True,
+            "max": 189.54,
+            "min": 131.22,
+            "cost_basis": 145.8,
+            "target": 174.96,
+            "isin": "FR0011726835",
+            "yahoo_symbol": "GTT.PA",
+            "sector": "Énergie"
+        },
+        "NEOEN": {
+            "name": "NEOEN",
+            "code": "NEOEN",
+            "active": True,
+            "max": 50.7,
+            "min": 35.1,
+            "cost_basis": 39.0,
+            "target": 46.8,
+            "isin": "FR0011675362",
+            "yahoo_symbol": "NEOEN.PA",
+            "sector": "Énergie"
+        },
+        "NEXANS": {
+            "name": "NEXANS",
+            "code": "NEX",
+            "active": True,
+            "max": 127.53,
+            "min": 88.29,
+            "cost_basis": 98.1,
+            "target": 117.72,
+            "isin": "FR0000044448",
+            "yahoo_symbol": "NEX.PA",
+            "sector": "Industrie"
+        },
+        "SARTORIUS_STED_BIO": {
+            "name": "SARTORIUS STED BIO",
+            "code": "DIM",
+            "active": True,
+            "max": 254.02,
+            "min": 175.86,
+            "cost_basis": 195.4,
+            "target": 234.48,
+            "isin": "FR0013154002",
+            "yahoo_symbol": "DIM.PA",
+            "sector": "Santé"
+        },
+        "SCHNEIDER_ELECTRIC": {
+            "name": "SCHNEIDER ELECTRIC",
+            "code": "SU",
+            "active": True,
+            "max": 302.25,
+            "min": 209.25,
+            "cost_basis": 232.5,
+            "target": 279.0,
+            "isin": "FR0000121972",
+            "yahoo_symbol": "SU.PA",
+            "sector": "Industrie"
+        },
+        "SOITEC": {
+            "name": "SOITEC",
+            "code": "SOI",
+            "active": True,
+            "max": 73.84,
+            "min": 51.12,
+            "cost_basis": 56.8,
+            "target": 68.16,
+            "isin": "FR0013227113",
+            "yahoo_symbol": "SOI.PA",
+            "sector": "Technologie"
+        },
+        "STMICROELECTRONICS": {
+            "name": "STMICROELECTRONICS",
+            "code": "STMPA",
+            "active": True,
+            "max": 28.72,
+            "min": 19.89,
+            "cost_basis": 22.095,
+            "target": 26.51,
+            "isin": "NL0000226223",
+            "yahoo_symbol": "STMPA.PA",
+            "sector": "Technologie"
+        },
+        "TOTALENERGIES": {
+            "name": "TOTALENERGIES",
+            "code": "TTE",
+            "active": True,
+            "max": 76.05,
+            "min": 52.65,
+            "cost_basis": 58.5,
+            "target": 70.2,
+            "isin": "FR0000120271",
+            "yahoo_symbol": "TTE.PA",
+            "sector": "Énergie"
+        },
+        "VEOLIA_ENVIRON.": {
+            "name": "VEOLIA ENVIRON.",
+            "code": "VIE",
+            "active": True,
+            "max": 40.82,
+            "min": 28.26,
+            "cost_basis": 31.4,
+            "target": 37.68,
+            "isin": "FR0000124141",
+            "yahoo_symbol": "VIE.PA",
+            "sector": "Services aux collectivités"
+        },
+        "VERIMATRIX": {
+            "name": "VERIMATRIX",
+            "code": "VMX",
+            "active": True,
+            "max": 0.4,
+            "min": 0.28,
+            "cost_basis": 0.311,
+            "target": 0.37,
+            "isin": "FR0010291245",
+            "yahoo_symbol": "VMX.PA",
+            "sector": "Technologie"
+        },
+        "SAFRAN": {
+            "name": "SAFRAN",
+            "code": "SAF",
+            "active": True,
+            "max": 326.43,
+            "min": 225.99,
+            "cost_basis": 251.1,
+            "target": 301.32,
+            "isin": "FR0000073272",
+            "yahoo_symbol": "SAF.PA",
+            "sector": "Technologie"
+        },
+        "SANOFI": {
+            "name": "SANOFI",
+            "code": "SAN",
+            "active": True,
+            "max": 137.33,
+            "min": 95.08,
+            "cost_basis": 105.64,
+            "target": 126.77,
+            "isin": "FR0000120578",
+            "yahoo_symbol": "SAN.PA",
+            "sector": "Santé"
+        },
+        "DELTA_PLUS_GROUP": {
+            "name": "Delta Plus Group",
+            "code": "ALDLT",
+            "active": True,
+            "max": 63.96,
+            "min": 44.28,
+            "cost_basis": 49.2,
+            "target": 59.04,
+            "isin": "FR0013283108",
+            "yahoo_symbol": "ALDLT.PA",
+            "sector": "Consommation de base"
+        }
+    }
+
+from pea_trading.portfolios.stock import Stock
+
+
+def get_stock_config(stock_code):
+    """
+    Récupère la configuration d'une valeur par son code
+    
+    Args:
+        stock_code: Code interne de l'action
+        
+    Returns:
+        Dict contenant la configuration ou None si non trouvé
+    """
+
+    
+    return next(
+        (config for config in STOCKS_CONFIG.values() if config["code"] == stock_code),
+        None
+    )
+
+def get_stock_by_isin(isin):
+    """
+    Récupère la configuration d'une valeur par son code ISIN
+    
+    Args:
+        isin: Code ISIN de l'action
+        
+    Returns:
+        Dict contenant la configuration ou None si non trouvé
+    """
+    return next(
+        (config for config in STOCKS_CONFIG.values() if config["isin"] == isin),
+        None
+    )
+
+def get_stock_by_yahoo_symbol(symbol):
+    """
+    Récupère la configuration d'une valeur par son symbole Yahoo Finance
+    
+    Args:
+        symbol: Symbole Yahoo Finance
+        
+    Returns:
+        Dict contenant la configuration ou None si non trouvé
+    """
+    return next(
+        (config for config in STOCKS_CONFIG.values() if config["yahoo_symbol"] == symbol),
+        None
+    )
+
+def get_active_stocks():
+    """
+    Récupère la liste des valeurs actives
+    
+    Returns:
+        Liste des configurations des valeurs actives
+    """
+    return [
+        config for config in STOCKS_CONFIG.values()
+        if config["active"]
+    ]
+
+def get_watched_stocks():
+    """
+    Récupère la liste des valeurs en veille
+    
+    Returns:
+        Liste des configurations des valeurs en veille
+    """
+    return [
+        config for config in STOCKS_CONFIG.values()
+        if not config["active"]
+    ]
+
+def get_stocks_by_sector(sector):
+    """
+    Récupère la liste des valeurs d'un secteur donné
+    
+    Args:
+        sector: Secteur d'activité
+        
+    Returns:
+        Liste des configurations des valeurs du secteur
+    """
+    return [
+        config for config in STOCKS_CONFIG.values()
+        if config["sector"] == sector
+    ]
+
+def get_all_sectors():
+    """
+    Récupère la liste de tous les secteurs
+    
+    Returns:
+        Liste des secteurs uniques
+    """
+
+    
+    return sorted(list(set(
+        config["sector"] for config in STOCKS_CONFIG.values()
+    )))
+    
+   
+   
+
+def get_all_yahoo_symbols():
+    """
+    Récupère tous les symboles Yahoo Finance
+    
+    Returns:
+        Liste des symboles Yahoo Finance
+    """
+    """
+    return [config["yahoo_symbol"] for config in STOCKS_CONFIG.values()]
+    """
+    return [s.symbol for s in Stock.query.all()]
