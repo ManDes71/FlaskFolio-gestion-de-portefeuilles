@@ -188,7 +188,7 @@ cd FlaskFolio-gestion-de-portefeuilles
 
 Créer un fichier `.env` à la racine du projet avec les variables suivantes :
 
-```
+```bash
 FLASK_ENV=dev
 SECRET_KEY=your-secret-key
 DATABASE_URL=sqlite:///finance.db
@@ -202,15 +202,17 @@ MAIL_PASSWORD=your-email-password
 docker-compose down
 docker-compose build
 docker-compose up -d
+```
 
-lancer ces commandes en lignes en shell interactif
+
+## lancer ces commandes en lignes en shell interactif
+```bash
 docker-compose exec web bash
 
- -python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
+ - python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
  - python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
  - python manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv"
  - python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
-'''
 
 
 docker-compose logs -f web
