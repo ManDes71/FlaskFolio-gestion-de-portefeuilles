@@ -48,6 +48,23 @@ def run_server(env, host, port):
         print(f"🟢 Serveur Flask en cours d’exécution sur {host}:{port}...")
         app.run(debug=debug, host=host, port=port)
 
+
+# python manage.py  run --env="prod"
+
+@cli.command("start_jobs")
+def start_jobs():
+    """
+    🚀 Lance uniquement les jobs de fond définis dans app.py
+    Usage : python manage.py start_jobs
+    """
+    from app import launch_background_jobs
+    print("🚀 Lancement des jobs de fond...")
+    launch_background_jobs()
+    print("✅ Jobs de fond lancés.")
+
+# python manage.py start_jobs
+
+
 @cli.command("update")
 @click.option("--historique", is_flag=True, help="Inclure la mise à jour historique")
 def update_data(historique):
@@ -401,6 +418,13 @@ def interactive_shell():
     context = {'app': app, 'db': db}
     code.interact(banner=banner, local=context)
 
+# docker exec -it flaskfolio-test  python manage.py  shell
+# python manage.py  shell   
+# 
+#  Shell interactif - `app`, `db` disponibles
+#>>> from tasks_scheduler import scheduler
+#>>> scheduler.get_jobs()
+#[]       
 
 if __name__ == '__main__':
     cli()

@@ -8,6 +8,7 @@ from flask_mail import Mail
 from config.settings import Config
 from config.settings import DevConfig, ProdConfig, TestConfig
 from prometheus_flask_exporter import PrometheusMetrics
+from pea_trading.services.scheduler_utils import scheduler_instance, start_scheduler_with_jobs
 
 # config hostinger
 #from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -129,12 +130,12 @@ login_manager.login_view = "users.login"
 from pea_trading.portfolios.views_portfolio import portfolios
 from pea_trading.users.views_users import users
 
-print("coucou1")
+print("étape 1 ....")
 from pea_trading.error_pages.handlers import error_pages
-print("coucou2")
+print("étape 2 ....")
 from pea_trading.admin.views_admin import admin_bp
 
-print("coucou3")
+print("étape 3 ....")
 
 # Register the apps
 app.register_blueprint(portfolios)
@@ -201,8 +202,12 @@ with app.app_context():
                 print("⚠️ La table stocks n'existe pas encore. Ignoré.")
         except Exception as e:
             print(f"❌ Erreur lors de la mise à jour des actions : {str(e)}")    
+            
+    print("💡 Lancement du scheduler depuis __init__.py")
+    if not scheduler_instance.running:
+        start_scheduler_with_jobs(app, db, mail)        
 
 #application = DispatcherMiddleware(None, {'/flask': app})   
 #application = app
 
-print("coucou4")
+print("fin ....")

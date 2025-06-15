@@ -1,6 +1,7 @@
 # pea_trading\admin\views_admin.py
 from flask import Blueprint, render_template, current_app, redirect, url_for, flash,  session, request, send_file, jsonify, make_response
 from pea_trading import db
+from flask_mail import Mail
 from pea_trading.portfolios.portfolio import Portfolio, Transaction, CashMovement
 from pea_trading.portfolios.stock import Stock, Position, StockPriceHistory
 from pea_trading.services.yahoo_finance import update_stock_prices, update_historical_prices
@@ -10,7 +11,9 @@ from flask_login import login_required
 from pea_trading.services.export_utils import export_stocks_to_csv, export_stock_history_to_csv
 from pea_trading.services.export_utils import export_portfolio_positions_to_csv, export_portfolio_transactions_to_csv, export_portfolio_cash_movements_to_csv
 from pea_trading.services.import_utils import process_stocks_csv_file, process_stock_history_csv_file
-from tasks_scheduler import scheduler_instance
+from pea_trading.services.scheduler_jobs import  run_alertes, run_update_stocks,  run_scraping_intraday
+
+from pea_trading.services.scheduler_utils import scheduler_instance
 from pea_trading.services.scheduler_utils import start_scheduler_with_jobs
 from pea_trading.services.portfolio_loader import restore_portfolio_from_csv
 from datetime import datetime
@@ -686,7 +689,7 @@ def admin_liquidites():
     return render_template("admin_liquidites.html", movements=movements, portfolios=portfolios, selected_portfolio_id=selected_portfolio_id)
 
 # export CSV des transactions ou liquidités d’un portefeuille sélectionné
-
+"""
 @admin_bp.route('/admin/export_transactions')
 @login_required
 def export_transactions_csv():
@@ -707,7 +710,6 @@ def export_transactions_csv():
     output.headers["Content-Disposition"] = "attachment; filename=transactions.csv"
     output.headers["Content-type"] = "text/csv"
     return output
-"""
 
 @admin_bp.route('/admin/export_liquidites')
 @login_required
@@ -730,7 +732,7 @@ def export_cash_movements_csv():
     output.headers["Content-type"] = "text/csv"
     return output
     
-
+"""
 
 @admin_bp.route('/export/transactions')
 @login_required
@@ -751,7 +753,6 @@ def export_public_transactions_csv():
     output.headers["Content-Disposition"] = "attachment; filename=transactions.csv"
     output.headers["Content-type"] = "text/csv"
     return output
-"""
 
 
 @admin_bp.route('/export/liquidites')
@@ -854,6 +855,10 @@ def add_stock():
 @login_required
 def scheduler_dashboard():
     jobs = scheduler_instance.get_jobs()
+    print("🔍 Jobs enregistrés dans le scheduler :")
+    for job in jobs:
+        print(f"- {job.id}: next_run={job.next_run_time}, trigger={job.trigger}, func={job.func}")
+
     server_time = datetime.now()  # Heure actuelle du serveur (locale à l'OS du serveur)
 
     # Heure de Paris
@@ -872,22 +877,32 @@ def scheduler_dashboard():
             "next_run_time_paris": job.next_run_time.astimezone(paris_tz) if job.next_run_time else None
         })
 
+    from apscheduler.triggers.interval import IntervalTrigger
+    scheduler_instance.add_job(lambda: print("TEST"), trigger=IntervalTrigger(seconds=60), id="test_job", replace_existing=True)    
+
 
     return render_template('admin_scheduler.html', jobs=enriched_jobs,  server_time=server_time, paris_time=paris_time)
 
 @admin_bp.route('/admin/scheduler/run/<job_id>', methods=['POST'])
 @login_required
 def run_scheduler_job_now(job_id):
-    job = scheduler_instance.get_job(job_id)
-    if job:
-        try:
-            job.func()
-            flash(f"✅ Tâche '{job_id}' exécutée manuellement.", "success")
-        except Exception as e:
-            flash(f"❌ Erreur lors de l'exécution de la tâche : {str(e)}", "danger")
-    else:
-        flash("❌ Tâche introuvable.", "danger")
+    try:
+        if job_id == "job_alertes":
+            run_alertes()
+            flash("🔔 Job d'alertes lancé avec succès", "success")
+        elif job_id == "job_update_stocks":
+            run_update_stocks()
+            flash("📈 Mise à jour des cours lancée avec succès", "success")
+        elif job_id == "job_scraping_intraday":
+            run_scraping_intraday()
+            flash("⚡ Scraping intraday lancé avec succès", "success")
+        else:
+            flash(f"❌ Job inconnu : {job_id}", "danger")
+    except Exception as e:
+        flash(f"❌ Erreur lors de l'exécution de la tâche : {str(e)}", "danger")
+    
     return redirect(url_for('admin.scheduler_dashboard'))
+
 
 @admin_bp.route('/admin/scheduler/pause/<job_id>', methods=['POST'])
 @login_required
@@ -920,14 +935,14 @@ def remove_scheduler_job(job_id):
 @admin_bp.route('/admin/restart_scheduler', methods=['POST'])
 @login_required
 def restart_scheduler():
-
     try:
-        start_scheduler_with_jobs()
+        app = current_app._get_current_object()
+        mail = Mail(app)
+        start_scheduler_with_jobs(app, db, mail)
         flash('✅ Scheduler relancé avec succès.', 'success')
-        return redirect(url_for('admin.scheduler_dashboard'))
     except Exception as e:
         flash(f'❌ Erreur : {e}', 'danger')
-        return redirect(url_for('admin.scheduler_dashboard'))
+    return redirect(url_for('admin.scheduler_dashboard'))
 
 
 from pea_trading.users.models import User

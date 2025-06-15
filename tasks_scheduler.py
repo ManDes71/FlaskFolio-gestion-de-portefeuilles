@@ -178,7 +178,7 @@ def job_scraping_intraday():
       
 
 # 🚦 Démarrage du scheduler uniquement dans le process principal
-if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+if __name__ == "__main__":
     print("📅 Configuration du scheduler...")
 
     if scheduler.get_job("job_alertes"):

@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="my-4">Sélectionnez un Portefeuille</h2>
+    <h2 class="my-4">Sélectionnez un portefeuille virtuel</h2>
     <div class="list-group">
         {% for portfolio in portfolios %}
         <a href="{{ url_for('portfolios.select_portfolio', portfolio_id=portfolio.id) }}" class="list-group-item list-group-item-action">
