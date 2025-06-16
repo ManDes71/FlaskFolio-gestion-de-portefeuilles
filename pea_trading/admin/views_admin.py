@@ -875,10 +875,7 @@ def scheduler_dashboard():
             "trigger": str(job.trigger),
             "next_run_time_server": job.next_run_time,
             "next_run_time_paris": job.next_run_time.astimezone(paris_tz) if job.next_run_time else None
-        })
-
-    from apscheduler.triggers.interval import IntervalTrigger
-    scheduler_instance.add_job(lambda: print("TEST"), trigger=IntervalTrigger(seconds=60), id="test_job", replace_existing=True)    
+        })  
 
 
     return render_template('admin_scheduler.html', jobs=enriched_jobs,  server_time=server_time, paris_time=paris_time)

@@ -87,7 +87,6 @@ def job_update_stocks(app):
             logger.error(f"❌ update_historical_price : {e}")
 
 def job_scraping_intraday(app, db):
-    from pea_trading.services.yahoo_finance import update_intraday_data, update_historical_prices
     from pea_trading.portfolios.stock import Stock, StockPriceHistory
     from pea_trading.services.live_scraper import  get_stock_prices, get_stock_info
     if is_today_closed():
