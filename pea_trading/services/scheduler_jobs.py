@@ -119,7 +119,7 @@ def job_scraping_intraday(app, db):
                     if stock:
                         print(f"✅ {isin} trouvé")
                         stock.current_price = price
-                        stock.last_updated = datetime.now()
+                        stock.last_updated = datetime.now(paris_tz)
                         updated += 1
 
                         # Ajout ou mise à jour de StockPriceHistory
