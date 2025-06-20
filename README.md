@@ -614,8 +614,3 @@ Ce projet est sous licence MIT.
 ✨ *PEA Trading – Prenez le contrôle de vos investissements !*
 
 ```
-
----
-
-Souhaites-tu que je crée directement ce fichier dans le dépôt local du projet (dans un fichier `README.md`) ou que je le modifie ensuite avec des sections supplémentaires (par exemple pour un guide utilisateur, une documentation API ou des captures d’écran) ?
-```
