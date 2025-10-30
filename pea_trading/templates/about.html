@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}À propos - Portfolio Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- En-tête principal -->
+    <div class="row">
+        <div class="col-12">
+            <div class="jumbotron bg-primary text-white p-5 rounded mb-4">
+                <h1 class="display-4">📊 Portfolio Manager</h1>
+                <p class="lead">Une application complète de gestion de portefeuille boursier développée avec Flask</p>
+                <p class="text-light">Démonstration des compétences en Data Science, DevOps et MLOps</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Présentation -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🎯 À propos du projet</h2>
+            <div class="card">
+                <div class="card-body">
+                    <p class="lead text-center">
+                        Cette application de gestion de portefeuille boursier est bien plus qu'un simple outil de suivi d'investissements. 
+                        Elle représente une synthèse complète de mes compétences techniques en développement web, analyse de données, 
+                        automatisation et déploiement d'applications.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fonctionnalités principales -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🚀 Fonctionnalités principales</h2>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fas fa-chart-line"></i> Suivi en temps réel</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li>📈 Mise à jour automatique des prix via l'API Yahoo Finance</li>
+                        <li>🔄 Scheduler automatisé avec APScheduler</li>
+                        <li>📊 Calcul de performances en temps réel</li>
+                        <li>⚡ Alertes personnalisées (seuils, objectifs)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-database"></i> Gestion des données</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li>🗄️ Base de données SQLite avec SQLAlchemy ORM</li>
+                        <li>📋 Import/Export CSV des transactions</li>
+                        <li>🔍 Historique complet des prix et mouvements</li>
+                        <li>📈 Calculs d'indicateurs techniques (Ichimoku)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <h5><i class="fas fa-chart-bar"></i> Visualisations</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li>📊 Graphiques interactifs avec Chart.js</li>
+                        <li>📈 Évolution historique du portefeuille</li>
+                        <li>🎯 Tableaux de bord personnalisés</li>
+                        <li>📱 Interface responsive (Bootstrap)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compétences Data Science -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🧠 Compétences Data Science</h2>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>📊 Analyse de données</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Pandas</strong> : Manipulation et analyse des données financières</li>
+                        <li><strong>NumPy</strong> : Calculs de performances et indicateurs</li>
+                        <li><strong>Calculs financiers</strong> : ROI, variations, moyennes mobiles</li>
+                        <li><strong>Séries temporelles</strong> : Analyse des historiques de prix</li>
+                        <li><strong>Agrégations</strong> : Calculs de portefeuille par période</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5>🔍 Indicateurs techniques</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Ichimoku Kinko Hyo</strong> : Implémentation complète</li>
+                        <li><strong>Moyennes mobiles</strong> : Tendances et signaux</li>
+                        <li><strong>Alertes intelligentes</strong> : Seuils dynamiques</li>
+                        <li><strong>Backtesting</strong> : Validation des stratégies</li>
+                        <li><strong>API intégration</strong> : Yahoo Finance, données temps réel</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compétences DevOps/MLOps -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🔧 Compétences DevOps/MLOps</h2>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5>🐳 Conteneurisation</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Docker</strong> : Application containerisée</li>
+                        <li><strong>Docker Compose</strong> : Orchestration multi-services</li>
+                        <li><strong>Volumes persistants</strong> : Gestion des données</li>
+                        <li><strong>Multi-stage builds</strong> : Optimisation des images</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5>📈 Monitoring</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Prometheus</strong> : Collecte de métriques</li>
+                        <li><strong>Grafana</strong> : Dashboards et alertes</li>
+                        <li><strong>Métriques custom</strong> : Performances applicatives</li>
+                        <li><strong>Health checks</strong> : Surveillance continue</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5>⚙️ Automatisation</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>APScheduler</strong> : Tâches programmées</li>
+                        <li><strong>Flask-Migrate</strong> : Gestion des schemas DB</li>
+                        <li><strong>CLI Tools</strong> : Scripts d'administration</li>
+                        <li><strong>Email automatique</strong> : Notifications d'alertes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture technique -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🏗️ Architecture technique</h2>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5>🖥️ Backend</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Flask</strong> : Framework web Python</li>
+                        <li><strong>SQLAlchemy</strong> : ORM et gestion de base de données</li>
+                        <li><strong>Flask-Login</strong> : Authentification utilisateur</li>
+                        <li><strong>Flask-Mail</strong> : Envoi d'emails automatisés</li>
+                        <li><strong>Blueprints</strong> : Architecture modulaire</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5>🎨 Frontend</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Bootstrap 5</strong> : Framework CSS responsive</li>
+                        <li><strong>Chart.js</strong> : Graphiques interactifs</li>
+                        <li><strong>Jinja2</strong> : Templating avancé</li>
+                        <li><strong>JavaScript</strong> : Interactions dynamiques</li>
+                        <li><strong>AJAX</strong> : Requêtes asynchrones</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Déploiement et production -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🚀 Production & Déploiement</h2>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>🌐 Hébergement</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Hostinger VPS</strong> : Serveur cloud dédié</li>
+                        <li><strong>Traefik</strong> : Reverse proxy et SSL auto</li>
+                        <li><strong>HTTPS</strong> : Certificats Let's Encrypt</li>
+                        <li><strong>Domain management</strong> : Configuration DNS</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5>🔄 CI/CD & Maintenance</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Git</strong> : Versioning et collaboration</li>
+                        <li><strong>Environment management</strong> : dev/prod/test</li>
+                        <li><strong>Backup automatique</strong> : Sauvegarde des données</li>
+                        <li><strong>Logging</strong> : Traçabilité et débogage</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact et liens -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3>💼 Portfolio & Contact</h3>
+                    <p class="lead">Intéressé par mes compétences ? Découvrez plus de projets sur mon blog !</p>
+                    <a href="https://aventuresdata.com/blog/" target="_blank" class="btn btn-primary btn-lg">
+                        🌐 Visiter mon blog Data Science
+                    </a>
+                    <p class="mt-3 text-muted">
+                        <small>Cette application démontre une maîtrise complète du cycle de développement : 
+                        de l'analyse des besoins au déploiement en production, en passant par l'architecture, 
+                        le développement, les tests et le monitoring.</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technologies utilisées -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">🛠️ Stack technique complète</h2>
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-primary p-2 w-100">Python 3.10+</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-success p-2 w-100">Flask</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-info p-2 w-100">SQLAlchemy</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-warning p-2 w-100">Pandas</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-danger p-2 w-100">Docker</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-secondary p-2 w-100">Prometheus</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-dark p-2 w-100">Bootstrap 5</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-primary p-2 w-100">Chart.js</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-success p-2 w-100">APScheduler</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-info p-2 w-100">yfinance</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-warning p-2 w-100">Traefik</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <span class="badge bg-danger p-2 w-100">Grafana</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section lien retour au blog -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card bg-light border-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🌐 Découvrez plus de projets</h5>
+                    <p class="card-text">
+                        Cette application fait partie d'une série de projets de Data Science et développement web. 
+                        Retrouvez d'autres démonstrations techniques et tutoriels sur mon blog.
+                    </p>
+                    <a href="https://aventuresdata.com/blog/" target="_blank" class="btn btn-primary btn-lg">
+                        <i class="fas fa-external-link-alt"></i> ↩️ Retour au blog Aventures Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Animation d'apparition progressive des cartes
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %}

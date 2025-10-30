@@ -86,8 +86,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_path
 print("db_path  : ",db_path)    
 
 
-if USE_EXTERNAL_DB and not os.path.exists("app//db_data/data.sqlite"):
-    print("⚠️ Avertissement : /db_data/data.sqlite n'existe pas encore.")
+# Vérifier l'existence du fichier de base lorsqu'on utilise une DB externe
+if USE_EXTERNAL_DB:
+    # Utiliser la variable db_file_path (chemin absolu) pour la vérification
+    if not os.path.exists(db_file_path):
+        print(f"⚠️ Avertissement : {db_file_path} n'existe pas encore.")
 
 
 

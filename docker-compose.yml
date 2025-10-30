@@ -8,6 +8,7 @@ services:
       - ./db_data:/app/db_data
       - ./exports_local:/app/pea_trading/static/exports
       - ./uploads_local:/app/pea_trading/static/uploads
+      - ./logs_local:/app/pea_trading/static/logs
     environment:
       - USE_EXTERNAL_DB=1
     #command: gunicorn -b 0.0.0.0:5000 pea_trading:application

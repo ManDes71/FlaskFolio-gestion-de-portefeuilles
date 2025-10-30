@@ -1,6 +1,7 @@
 # manage.py
 import os
 import click
+import logging
 from pea_trading import app, db
 from pea_trading.services.yahoo_finance import update_stock_prices, update_historical_prices
 from pea_trading.portfolios.portfolio import Portfolio
@@ -21,7 +22,28 @@ from werkzeug.security import generate_password_hash
 import csv
 from datetime import datetime
 
+# 📂 Configuration du logging pour manage.py
+log_dir = os.path.join(os.path.dirname(__file__), 'pea_trading', 'static', 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
+# 📄 Fichier de log pour les commandes manage.py
+log_file = os.path.join(log_dir, 'manage.log')
+
+# ⚙️ Configuration du logger pour manage.py
+logger = logging.getLogger("manage")
+logger.setLevel(logging.INFO)
+
+# Handler pour fichier
+file_handler = logging.FileHandler(log_file, encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+
+# Formatter
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | [MANAGE] %(message)s')
+file_handler.setFormatter(formatter)
+
+# Ajouter le handler s'il n'existe pas déjà
+if not logger.handlers:
+    logger.addHandler(file_handler)
 
 @click.group()
 def cli():
@@ -34,20 +56,25 @@ def cli():
 @click.option("--port", default=5000, help="Port à utiliser")
 def run_server(env, host, port):
     """Lance le serveur Flask dans l’environnement spécifié"""
+    logger.info(f"🚀 Commande 'run' exécutée - env: {env}, host: {host}, port: {port}")
     os.environ["FLASK_ENV"] = env
     debug = app.config["DEBUG"]
     print(f"🚀 Démarrage en mode {env.upper()} (debug={debug})")
+    logger.info(f"Configuration: env={env.upper()}, debug={debug}")
 
-    # 🔁 Démarrage des jobs de fond
+     # 🔁 Démarrage des jobs de fond
+    try:
+        from app import launch_background_jobs
+        launch_background_jobs()
+        logger.info("✅ Jobs de fond lancés avec succès")
+    except Exception as e:
+        logger.error(f"❌ Erreur lors du lancement des jobs de fond: {e}")
 
-    from app import launch_background_jobs
-
-    launch_background_jobs()
-    # ✅ Lancer le serveur uniquement si ce n’est pas via `flask run`
+    # ✅ Lancer le serveur uniquement si ce n'est pas via `flask run`
     if os.environ.get("FLASK_RUN_FROM_CLI") != "true":
-        print(f"🟢 Serveur Flask en cours d’exécution sur {host}:{port}...")
+        print(f"🟢 Serveur Flask en cours d'exécution sur {host}:{port}...")
+        logger.info(f"🟢 Serveur Flask démarré sur {host}:{port}")
         app.run(debug=debug, host=host, port=port)
-
 
 # python manage.py  run --env="prod"
 
@@ -57,48 +84,75 @@ def start_jobs():
     🚀 Lance uniquement les jobs de fond définis dans app.py
     Usage : python manage.py start_jobs
     """
-    from app import launch_background_jobs
-    print("🚀 Lancement des jobs de fond...")
-    launch_background_jobs()
-    print("✅ Jobs de fond lancés.")
-
+    logger.info("🚀 Commande 'start_jobs' exécutée")
+    try:
+        from app import launch_background_jobs
+        print("🚀 Lancement des jobs de fond...")
+        launch_background_jobs()
+        print("✅ Jobs de fond lancés.")
+        logger.info("✅ Jobs de fond lancés avec succès")
+    except Exception as e:
+        logger.error(f"❌ Erreur lors du lancement des jobs: {e}")
+        print(f"❌ Erreur: {e}")
 # python manage.py start_jobs
-
 
 @cli.command("update")
 @click.option("--historique", is_flag=True, help="Inclure la mise à jour historique")
 def update_data(historique):
     """Met à jour les prix des actions et éventuellement l’historique"""
+    logger.info(f"🔁 Commande 'update' exécutée - historique: {historique}")
+    
     with app.app_context():
-        print("🔁 Mise à jour des prix actuels...")
-        update_stock_prices()
-        print("✅ Prix mis à jour.")
+        try:
+            print("🔁 Mise à jour des prix actuels...")
+            update_stock_prices()
+            print("✅ Prix mis à jour.")
+            logger.info("✅ Prix des actions mis à jour avec succès")
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la mise à jour des prix: {e}")
+            print(f"❌ Erreur prix: {e}")
 
         if historique:
-            print("📈 Mise à jour des historiques...")
-            update_historical_prices()
-            print("✅ Historique mis à jour.")
+            try:
+                print("📈 Mise à jour des historiques...")
+                update_historical_prices()
+                print("✅ Historique mis à jour.")
+                logger.info("✅ Historique des prix mis à jour avec succès")
+            except Exception as e:
+                logger.error(f"❌ Erreur lors de la mise à jour de l'historique: {e}")
+                print(f"❌ Erreur historique: {e}")
 
 
 @cli.command("init-db")
 @click.option("--force", is_flag=True, help="Recharge le portefeuille même si non vide")
 def init_db(force):
     """Initialise le portefeuille à partir des données de base"""
+    logger.info(f"🛠 Commande 'init-db' exécutée - force: {force}")
+    
     with app.app_context():
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
+        try:
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
 
-        if not inspector.has_table("portfolios"):
-            print("🚧 La table portfolios n’existe pas encore.")
-            return
+            if not inspector.has_table("portfolios"):
+                error_msg = "🚧 La table portfolios n'existe pas encore."
+                print(error_msg)
+                logger.warning(error_msg)
+                return
 
-        if force or not db.session.query(db.models['Portfolio']).first():
-            print("🔄 Initialisation du portefeuille...")
-            load_portfolio_data()
-            print("✅ Portefeuille chargé.")
-        else:
-            print("ℹ️ Portefeuille déjà initialisé. Utilise --force pour forcer.")
-
+            if force or not db.session.query(db.models['Portfolio']).first():
+                print("🔄 Initialisation du portefeuille...")
+                logger.info("🔄 Début de l'initialisation du portefeuille")
+                load_portfolio_data()
+                print("✅ Portefeuille chargé.")
+                logger.info("✅ Portefeuille initialisé avec succès")
+            else:
+                info_msg = "ℹ️ Portefeuille déjà initialisé. Utilise --force pour forcer."
+                print(info_msg)
+                logger.info(info_msg)
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de l'initialisation: {e}")
+            print(f"❌ Erreur: {e}")
 # manage.py
 
 
@@ -111,26 +165,45 @@ def change_password(email):
     🔐 Change le mot de passe d'un utilisateur via la CLI
     Usage : python manage.py change_password user@example.com
     """
+    logger.info(f"🔐 Commande 'change_password' exécutée pour l'utilisateur: {email}")
+    
     with app.app_context():
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            print("❌ Utilisateur introuvable.")
-            return
+        try:
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                error_msg = f"❌ Utilisateur {email} introuvable."
+                print(error_msg)
+                logger.error(error_msg)
+                return
 
-        import getpass
-        password = getpass.getpass("Nouveau mot de passe : ")
-        confirm = getpass.getpass("Confirmez le mot de passe : ")
-        if password != confirm:
-            print("❌ Les mots de passe ne correspondent pas.")
-            return
-        
-        if not password:
-            print("❌ Mot de passe vide.")
-            return
+            import getpass
+            password = getpass.getpass("Nouveau mot de passe : ")
+            confirm = getpass.getpass("Confirmez le mot de passe : ")
+            
+            if password != confirm:
+                error_msg = "❌ Les mots de passe ne correspondent pas."
+                print(error_msg)
+                logger.warning(f"Tentative de changement de mot de passe échouée pour {email}: mots de passe non correspondants")
+                return
+            
+            if not password:
+                error_msg = "❌ Mot de passe vide."
+                print(error_msg)
+                logger.warning(f"Tentative de changement de mot de passe échouée pour {email}: mot de passe vide")
+                return
 
-        user.password_hash = generate_password_hash(password)
-        db.session.commit()
-        print("✅ Mot de passe mis à jour avec succès.")
+            user.password_hash = generate_password_hash(password)
+            db.session.commit()
+            
+            success_msg = "✅ Mot de passe mis à jour avec succès."
+            print(success_msg)
+            logger.info(f"✅ Mot de passe mis à jour avec succès pour l'utilisateur {email}")
+            
+        except Exception as e:
+            error_msg = f"❌ Erreur lors du changement de mot de passe: {e}"
+            logger.error(error_msg)
+            print(error_msg)
+
 
 
     # python manage.py change_password user@example.com
@@ -143,6 +216,8 @@ def list_stock_duplicates():
     🔍 Liste les doublons dans la table Stock (symbol ou ISIN en double)
     Usage : python manage.py list_stock_duplicates
     """
+    logger.info("🔍 Commande 'list_stock_duplicates' exécutée")
+    
     with app.app_context():
         duplicates = {}
 
@@ -160,11 +235,14 @@ def list_stock_duplicates():
 
         if not duplicates:
             print("✅ Aucun doublon détecté.")
+            logger.info("✅ Aucun doublon détecté dans Stock")
             return
 
         print("⚠️ Doublons détectés :")
+        logger.warning(f"⚠️ Doublons détectés: {len(duplicates)} type(s)")
         for field, values in duplicates.items():
             print(f"\nChamp : {field}")
+            logger.warning(f"Doublons sur {field}: {len(values)} entrée(s)")
             for value, count in values:
                 print(f" - {value} apparaît {count} fois")
 
@@ -177,6 +255,7 @@ def list_history_duplicates():
     🔍 Liste les doublons dans StockPriceHistory (même stock_id + date)
     Usage : python manage.py list_history_duplicates
     """
+    logger.info("🔍 Commande 'list_history_duplicates' exécutée")
     from pea_trading.portfolios.stock import StockPriceHistory
 
     with app.app_context():
@@ -193,9 +272,11 @@ def list_history_duplicates():
 
         if not doublons:
             print("✅ Aucun doublon dans StockPriceHistory.")
+            logger.info("✅ Aucun doublon dans StockPriceHistory")
             return
 
         print("⚠️ Doublons détectés dans StockPriceHistory :\n")
+        logger.warning(f"⚠️ {len(doublons)} doublon(s) détecté(s) dans StockPriceHistory")
         for stock_id, date, count in doublons:
             print(f"- stock_id = {stock_id}, date = {date.strftime('%Y-%m-%d')} ➜ {count} entrées")
 
@@ -207,10 +288,13 @@ def delete_history_duplicates():
     🗑️ Supprime les doublons dans StockPriceHistory (garde le plus récent ID)
     Usage : python manage.py delete_history_duplicates
     """
+    logger.info("🗑️ Commande 'delete_history_duplicates' exécutée")
     from pea_trading.portfolios.stock import StockPriceHistory
 
     with app.app_context():
         print("🔍 Recherche des doublons...")
+        logger.info("🔍 Recherche des doublons dans StockPriceHistory")
+        
         doublons = db.session.query(
             StockPriceHistory.stock_id,
             StockPriceHistory.date,
@@ -224,6 +308,7 @@ def delete_history_duplicates():
 
         if not doublons:
             print("✅ Aucun doublon trouvé.")
+            logger.info("✅ Aucun doublon trouvé dans StockPriceHistory")
             return
 
         total_suppr = 0
@@ -237,15 +322,25 @@ def delete_history_duplicates():
 
         db.session.commit()
         print(f"🗑️ {total_suppr} doublon(s) supprimé(s) de StockPriceHistory.")
+        logger.info(f"🗑️ {total_suppr} doublon(s) supprimé(s) de StockPriceHistory")
 
     # python manage.py delete_history_duplicates
 
 
 @cli.command("export_all_stocks_csv")
 def export_all_stocks_csv():
+    """Exporte toutes les actions vers un fichier CSV"""
+    logger.info("📤 Commande 'export_all_stocks_csv' exécutée")
+    
     with app.app_context():
-        filepath = export_stocks_to_csv()
-        print(f"✅ Export des actions terminé : {filepath}")
+        try:
+            filepath = export_stocks_to_csv()
+            print(f"✅ Export des actions terminé : {filepath}")
+            logger.info(f"✅ Export des actions terminé : {filepath}")
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'export des actions: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
 
     # python manage.py export_all_stocks_csv
@@ -253,35 +348,55 @@ def export_all_stocks_csv():
 
 @cli.command("export_all_stock_history_csv")
 def export_all_stock_history_csv():
+    """Exporte l'historique de toutes les actions vers un fichier CSV"""
+    logger.info("📤 Commande 'export_all_stock_history_csv' exécutée")
+    
     with app.app_context():
-        filepath=export_stock_history_to_csv()
-        print(f"✅ Export de l’historique terminé : {filepath}")
+        try:
+            filepath = export_stock_history_to_csv()
+            print(f"✅ Export de l'historique terminé : {filepath}")
+            logger.info(f"✅ Export de l'historique terminé : {filepath}")
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'export de l'historique: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
     # python manage.py export_all_stock_history_csv
 
 @cli.command("import_stocks_csv")
 def import_stocks_csv():
+    """Importe les actions depuis un fichier CSV"""
+    logger.info("📥 Commande 'import_stocks_csv' exécutée")
+    
     with app.app_context():
         success, error = process_stocks_csv_file()
         if success:
             print(f"✅ Importation des actions réussie ")
+            logger.info("✅ Importation des actions réussie")
         else:
             print(f"❌ Erreur : {error}")
+            logger.error(f"❌ Erreur lors de l'importation des actions: {error}")
 
     # python manage.py import_stocks_csv
 
 @cli.command("import_all_stock_history_csv")
 def import_all_stock_history_csv():
-    """Importe tout l’historique des valeurs depuis un fichier CSV"""
+    """Importe tout l'historique des valeurs depuis un fichier CSV"""
+    logger.info("📥 Commande 'import_all_stock_history_csv' exécutée")
+    
     with app.app_context():
         try:
             success, result = process_stock_history_csv_file()
             if success:
                 print(f"✅ {result} lignes importées ")
+                logger.info(f"✅ {result} lignes d'historique importées")
             else:
                 print(f"❌ Erreur pendant l'import : {result}")
+                logger.error(f"❌ Erreur pendant l'import de l'historique: {result}")
         except Exception as e:
-            print(f"❌ Erreur lors de l'import : {str(e)}")
+            error_msg = f"❌ Erreur lors de l'import : {str(e)}"
+            print(error_msg)
+            logger.error(error_msg)
 
     # python manage.py import_all_stock_history_csv
 
@@ -293,19 +408,27 @@ def export_portfolio_csv(portfolio_name, output):
     📁 Exporte les positions d'un portefeuille (symbole, ISIN, nom, quantité, prix d'achat, secteur) vers un CSV.
     Usage : python manage.py export_portfolio_csv "PEA"
     """
-   
+    logger.info(f"📁 Commande 'export_portfolio_csv' exécutée - portfolio: {portfolio_name}, output: {output}")
 
     with app.app_context():
-        portfolio = Portfolio.query.filter_by(name=portfolio_name).first()
-        if not portfolio:
-            print(f"❌ Portefeuille '{portfolio_name}' introuvable.")
-            return
+        try:
+            portfolio = Portfolio.query.filter_by(name=portfolio_name).first()
+            if not portfolio:
+                error_msg = f"❌ Portefeuille '{portfolio_name}' introuvable."
+                print(error_msg)
+                logger.error(error_msg)
+                return
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_name = portfolio_name.replace(" ", "_")
-        filename = output or f"portefeuille_export_{safe_name}_{timestamp}.csv"
-        path = export_portfolio_positions_to_csv(portfolio, filename)
-        print(f"✅ Export effectué : {path}")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_name = portfolio_name.replace(" ", "_")
+            filename = output or f"portefeuille_export_{safe_name}_{timestamp}.csv"
+            path = export_portfolio_positions_to_csv(portfolio, filename)
+            print(f"✅ Export effectué : {path}")
+            logger.info(f"✅ Export du portefeuille '{portfolio_name}' effectué : {path}")
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'export du portefeuille: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
 
     # python manage.py export_portfolio_csv "PEA"
@@ -320,17 +443,32 @@ def export_transactions_csv(portfolio_name, output):
     """
     
 
+    logger.info(f"📄 Commande 'export_transactions_csv' exécutée - portfolio: {portfolio_name}, output: {output}")
+    
     with app.app_context():
-        portfolio = Portfolio.query.filter_by(name=portfolio_name).first()
-        if not portfolio:
-            print(f"❌ Portefeuille '{portfolio_name}' introuvable.")
-            return
+        try:
+            portfolio = Portfolio.query.filter_by(name=portfolio_name).first()
+            if not portfolio:
+                error_msg = f"❌ Portefeuille '{portfolio_name}' introuvable."
+                print(error_msg)
+                logger.error(error_msg)
+                return
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_name = portfolio_name.replace(" ", "_")
-        filename = output or f"transactions_{safe_name}_{timestamp}.csv"
-        path = export_portfolio_transactions_to_csv(portfolio, filename)
-        print(f"✅ Export des transactions du portefeuille '{portfolio_name}' terminé : {path}")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_name = portfolio_name.replace(" ", "_")
+            filename = output or f"transactions_{safe_name}_{timestamp}.csv"
+            
+            logger.info(f"📄 Début de l'export des transactions pour le portefeuille '{portfolio_name}'")
+            path = export_portfolio_transactions_to_csv(portfolio, filename)
+            
+            success_msg = f"✅ Export des transactions du portefeuille '{portfolio_name}' terminé : {path}"
+            print(success_msg)
+            logger.info(success_msg)
+            
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'export des transactions: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
     # python manage.py export_transactions_csv "PEA"
     # python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
@@ -343,20 +481,28 @@ def export_cash_movements_csv(portfolio_name, output):
     💰 Exporte les mouvements de trésorerie d'un portefeuille vers un CSV.
     Usage : python manage.py export_cash_movements_csv "PEA"
     """
-    
+    logger.info(f"💰 Commande 'export_cash_mouvements_csv' exécutée - portfolio: {portfolio_name}, output: {output}")
 
     with app.app_context():
-        portfolio = Portfolio.query.filter_by(name=portfolio_name).first()
-        if not portfolio:
-            print(f"❌ Portefeuille '{portfolio_name}' introuvable.")
-            return
+        try:
+            portfolio = Portfolio.query.filter_by(name=portfolio_name).first()
+            if not portfolio:
+                error_msg = f"❌ Portefeuille '{portfolio_name}' introuvable."
+                print(error_msg)
+                logger.error(error_msg)
+                return
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_name = portfolio_name.replace(" ", "_")
-        filename = output or f"cash_mouvements_{safe_name}_{timestamp}.csv"
-        path = export_portfolio_cash_movements_to_csv(portfolio, filename)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_name = portfolio_name.replace(" ", "_")
+            filename = output or f"cash_mouvements_{safe_name}_{timestamp}.csv"
+            path = export_portfolio_cash_movements_to_csv(portfolio, filename)
 
-        print(f"✅ Export des mouvements de trésorerie pour '{portfolio_name}' terminé : {path}")
+            print(f"✅ Export des mouvements de trésorerie pour '{portfolio_name}' terminé : {path}")
+            logger.info(f"✅ Export des mouvements de trésorerie pour '{portfolio_name}' terminé : {path}")
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'export des mouvements de trésorerie: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
     # python manage.py export_cash_mouvements_csv "PEA"
     # python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
@@ -365,24 +511,34 @@ def export_cash_movements_csv(portfolio_name, output):
 @click.argument("portfolio_name")
 @click.argument("filename")
 def import_portfolio_positions_csv(portfolio_name, filename):
+    """Importe les positions d'un portefeuille depuis un fichier CSV"""
+    logger.info(f"📥 Commande 'import_portfolio_positions_csv' exécutée - portfolio: {portfolio_name}, file: {filename}")
+    
     with app.app_context():
         success, message = process_portfolio_positions_csv(portfolio_name, filename)
         if success:
             print(f"✅ {message}")
+            logger.info(f"✅ Import des positions réussi pour '{portfolio_name}': {message}")
         else:
             print(f"❌ Erreur : {message}")
+            logger.error(f"❌ Erreur lors de l'import des positions pour '{portfolio_name}': {message}")
     # python manage.py import_portfolio_positions_csv "PEA" portefeuille_export_PEA_20250531_214843.csv         
 
 @cli.command("import_transactions_csv")
 @click.argument("portfolio_name")
 @click.argument("filename")
 def import_transactions_csv(portfolio_name, filename):
+    """Importe les transactions d'un portefeuille depuis un fichier CSV"""
+    logger.info(f"📥 Commande 'import_transactions_csv' exécutée - portfolio: {portfolio_name}, file: {filename}")
+    
     with app.app_context():
         success, message = process_portfolio_transactions_csv(portfolio_name, filename)
         if success:
             print(f"✅ {message}")
+            logger.info(f"✅ Import des transactions réussi pour '{portfolio_name}': {message}")
         else:
             print(f"❌ Erreur : {message}")
+            logger.error(f"❌ Erreur lors de l'import des transactions pour '{portfolio_name}': {message}")
 
     # python manage.py import_transactions_csv "PEA-PME" transactions_PEA-PME_20250531_223800.csv        
 
@@ -390,29 +546,84 @@ def import_transactions_csv(portfolio_name, filename):
 @click.argument("portfolio_name")
 @click.argument("filename")
 def import_cash_movements_csv(portfolio_name, filename):
+    """Importe les mouvements de trésorerie d'un portefeuille depuis un fichier CSV"""
+    logger.info(f"📥 Commande 'import_cash_movements_csv' exécutée - portfolio: {portfolio_name}, file: {filename}")
+    
     with app.app_context():
         success, message = process_portfolio_cash_movements_csv(portfolio_name, filename)
         if success:
             print(f"✅ {message}")
+            logger.info(f"✅ Import des mouvements de trésorerie réussi pour '{portfolio_name}': {message}")
         else:
             print(f"❌ Erreur : {message}")
+            logger.error(f"❌ Erreur lors de l'import des mouvements de trésorerie pour '{portfolio_name}': {message}")
 
     
     # python manage.py import_cash_movements_csv "PEA-PME" cash_mouvements_PEA-PME_20250531_223806.csv
 
+@cli.command("show_logs")
+@click.option("--lines", default=50, help="Nombre de lignes à afficher (défaut: 50)")
+@click.option("--type", "log_type", default="manage", help="Type de log: 'manage', 'scheduler' ou 'all'")
+def show_logs(lines, log_type):
+    """
+    📄 Affiche les logs récents
+    Usage : python manage.py show_logs --lines=20 --type=manage
+    """
+    logger.info(f"📄 Commande 'show_logs' exécutée - lines: {lines}, type: {log_type}")
+    
+    log_dir = os.path.join(os.path.dirname(__file__), 'pea_trading', 'static', 'logs')
+    
+    if log_type == "manage":
+        log_files = [os.path.join(log_dir, 'manage.log')]
+    elif log_type == "scheduler":
+        log_files = [os.path.join(log_dir, 'scheduler.log')]
+    elif log_type == "all":
+        log_files = [
+            os.path.join(log_dir, 'manage.log'),
+            os.path.join(log_dir, 'scheduler.log')
+        ]
+    else:
+        print(f"❌ Type de log invalide: {log_type}. Utilisez 'manage', 'scheduler' ou 'all'")
+        return
+    
+    for log_file in log_files:
+        if os.path.exists(log_file):
+            print(f"\n📄 === {os.path.basename(log_file)} (dernières {lines} lignes) ===")
+            try:
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    all_lines = f.readlines()
+                    recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+                    for line in recent_lines:
+                        print(line.strip())
+            except Exception as e:
+                print(f"❌ Erreur lors de la lecture de {log_file}: {e}")
+        else:
+            print(f"⚠️ Fichier de log introuvable: {log_file}")
+
 @cli.command("test")
 def run_tests():
     """Lance tous les tests unitaires"""
-    import unittest
-    tests = unittest.TestLoader().discover('tests')
-    result = unittest.TextTestRunner(verbosity=2).run(tests)
-    if not result.wasSuccessful():
+    logger.info("🧪 Commande 'test' exécutée")
+    
+    try:
+        import unittest
+        tests = unittest.TestLoader().discover('tests')
+        result = unittest.TextTestRunner(verbosity=2).run(tests)
+        
+        if result.wasSuccessful():
+            logger.info("✅ Tous les tests ont réussi")
+        else:
+            logger.warning(f"⚠️ Tests échoués: {len(result.failures)} failures, {len(result.errors)} errors")
+            exit(1)
+    except Exception as e:
+        logger.error(f"❌ Erreur lors de l'exécution des tests: {e}")
         exit(1)
 
 
 @cli.command("shell")
 def interactive_shell():
     """Shell Python avec le contexte Flask"""
+    logger.info("🔧 Commande 'shell' exécutée")
     import code
     banner = "🔧 Shell interactif - `app`, `db` disponibles"
     context = {'app': app, 'db': db}

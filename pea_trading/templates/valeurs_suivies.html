@@ -24,7 +24,14 @@
                 <td><a href="{{ url_for('portfolios.stock_history', symbol=stock.symbol) }}">{{ stock.name }}</a></td>
                 <td>{{ stock.isin }}</td>
                 <td>{{ stock.sector }}</td>
-                <td>{{ "%.2f"|format(stock.current_price) }}€</td>
+                <td>
+                    {% if stock.current_price is not none %}
+                        {{ "%.2f"|format(stock.current_price) }}€
+                    {% else %}
+                        —  {# or “N/A”, or leave blank #}
+                    {% endif %}
+                </td>
+
             </tr>
             {% endfor %}
         </tbody>

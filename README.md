@@ -92,6 +92,7 @@ Ce projet utilise APScheduler pour planifier des tâches récurrentes comme :
 
 ---
 
+docker buildx build  --no-cache --platform linux/arm64 -t 905418050370.dkr.ecr.eu-west-3.amazonaws.com/flaskfolio:latest  --push  .
 ---
 
 ##  👤 Guide utilisateur
@@ -314,6 +315,7 @@ def change_password(email):
 ```
 
 * Change le mot de passe d'un utilisateur.
+toto@24 sur gmail
 
 
 Exemple :
@@ -321,7 +323,11 @@ Exemple :
 ```bash
 python  manage.py change_password user@example.com
 ```
+ou avec docker :
 
+```bash
+docker exec -it pea-trading-app python manage.py change_password user@example.com
+```
 ---
 
 ### 🛠 `list_stock_duplicates` — doublons dans la table Stock

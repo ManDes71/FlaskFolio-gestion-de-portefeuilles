@@ -3,3 +3,4 @@
 0 12 * * 6 root cd /app && python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
 0 12 * * 6 root cd /app && python manage.py export_cash_movements_csv "PEA" --output "cash_mouvements_export_PEA.csv"
 0 12 * * 6 root cd /app && python manage.py export_cash_movements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
+0 12 * * 6 root cd /app && python manage.py export_all_stocks_csv

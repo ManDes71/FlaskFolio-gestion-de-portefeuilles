@@ -478,7 +478,10 @@ def graphique_portefeuille():
     selected_portfolio = Portfolio.query.get(portfolio_id) if portfolio_id else None
     return render_template("graphique_portefeuille.html", selected_portfolio=selected_portfolio)
 
-
+@portfolios.route("/about")
+def about():
+    """Page À propos de l'application"""
+    return render_template("about.html")
 
 @portfolios.route("/api/portefeuille/historique")
 def api_historique_portefeuille():
@@ -522,10 +525,7 @@ def api_historique_portefeuille():
 
         # Transactions
         txs = tx[tx["Date"].dt.date == date_obj]
-        print("Dernière date transaction : ", tx["Date"].max())
-        print("Dernière date valeurs : ", df["date"].max())
-
-        #print(txs)
+        
         entry["transactions"] = []
         for _, t in txs.iterrows():
             entry["transactions"].append({
@@ -534,6 +534,11 @@ def api_historique_portefeuille():
                 "quantite": t["Quantité"],
                 "prix": t["Prix"]
             })
+        
+        # Debug: log les transactions trouvées
+        if len(entry["transactions"]) > 0:
+            transactions_info = [f"{t['type']} {t['symbol']}" for t in entry["transactions"]]
+            print(f"✅ {len(entry['transactions'])} transaction(s) trouvée(s) pour {date_obj}: {transactions_info}")
 
         # Versements
         versements = cash[(cash["Date"].dt.date == date_obj) & (cash["Type"].str.lower() == "versement")]
