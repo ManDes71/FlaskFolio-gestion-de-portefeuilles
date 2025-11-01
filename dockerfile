@@ -15,14 +15,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY . /app
 
 # Crée les dossiers nécessaires pour les volumes (au cas où ils n'existent pas encore)
 RUN mkdir -p /app/db_data \
              /app/pea_trading/static/exports \
              /app/pea_trading/static/uploads
 
-
+COPY . /app
 
 RUN pip install --upgrade pip &&  pip install --no-cache-dir -r requirements.txt
 

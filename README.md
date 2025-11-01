@@ -219,6 +219,8 @@ docker-compose up -d
 ```bash
 docker-compose exec web bash
 
+ - python manage.py import_portfolio_positions_csv "PEA" portefeuille_export_PEA.csv 
+
  - python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
  - python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
  - python manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv"

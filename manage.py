@@ -1,5 +1,6 @@
 # manage.py
 import os
+import unittest
 import click
 import logging
 from pea_trading import app, db
@@ -606,8 +607,19 @@ def run_tests():
     logger.info("🧪 Commande 'test' exécutée")
     
     try:
-        import unittest
-        tests = unittest.TestLoader().discover('tests')
+        
+        # Définir le chemin du dossier tests dans le projet
+        tests_dir = os.path.join(os.path.dirname(__file__), 'tests')
+        
+        # Vérifier si le dossier tests existe
+        if not os.path.exists(tests_dir):
+            print(f"⚠️ Aucun dossier 'tests' trouvé dans le projet.")
+            print(f"📁 Créez un dossier 'tests/' avec vos fichiers de test.")
+            logger.warning("Aucun dossier de tests trouvé")
+            return
+        
+        # Découvrir les tests uniquement dans le dossier du projet
+        tests = unittest.TestLoader().discover(tests_dir, pattern='test*.py')
         result = unittest.TextTestRunner(verbosity=2).run(tests)
         
         if result.wasSuccessful():
@@ -617,8 +629,138 @@ def run_tests():
             exit(1)
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution des tests: {e}")
+        print(f"❌ Erreur: {e}")
         exit(1)
 
+
+@cli.command("show_scheduler")
+def show_scheduler():
+    """
+    📅 Affiche les tâches planifiées (scheduler jobs)
+    Usage : python manage.py show_scheduler
+    """
+    logger.info("📅 Commande 'show_scheduler' exécutée")
+    
+    with app.app_context():
+        try:
+            from pea_trading.services.scheduler_utils import scheduler_instance
+            
+            if not scheduler_instance.running:
+                print("⚠️ Le scheduler n'est pas en cours d'exécution.")
+                logger.warning("Le scheduler n'est pas en cours d'exécution")
+                return
+            
+            jobs = scheduler_instance.get_jobs()
+            
+            if not jobs:
+                print("ℹ️ Aucune tâche planifiée trouvée.")
+                logger.info("Aucune tâche planifiée trouvée")
+                return
+            
+            print(f"📅 === Tâches planifiées ({len(jobs)} job(s)) ===\n")
+            
+            for job in jobs:
+                print(f"🔹 Job ID: {job.id}")
+                print(f"   Nom: {job.name}")
+                print(f"   Fonction: {job.func.__name__ if hasattr(job.func, '__name__') else job.func}")
+                
+                # Afficher le déclencheur
+                if hasattr(job.trigger, 'fields'):
+                    fields = job.trigger.fields
+                    trigger_info = []
+                    for field in fields:
+                        if str(field) != '*':
+                            trigger_info.append(f"{field.name}={field}")
+                    if trigger_info:
+                        print(f"   Déclencheur: {', '.join(trigger_info)}")
+                    else:
+                        print(f"   Déclencheur: {job.trigger}")
+                else:
+                    print(f"   Déclencheur: {job.trigger}")
+                
+                # Prochaine exécution
+                next_run = job.next_run_time
+                if next_run:
+                    print(f"   Prochaine exécution: {next_run.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+                else:
+                    print(f"   Prochaine exécution: Non planifiée")
+                
+                print()
+            
+            logger.info(f"Affichage de {len(jobs)} job(s) planifiés")
+            
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'affichage du scheduler: {e}"
+            logger.error(error_msg)
+            print(error_msg)
+
+@cli.command("show_cron")
+def show_cron():
+    """
+    ⏰ Affiche les tâches cron configurées
+    Usage : python manage.py show_cron
+    """
+    logger.info("⏰ Commande 'show_cron' exécutée")
+    
+    try:
+        cron_file = os.path.join(os.path.dirname(__file__), 'cron_jobs.txt')
+        
+        if not os.path.exists(cron_file):
+            print(f"⚠️ Fichier cron_jobs.txt introuvable.")
+            logger.warning("Fichier cron_jobs.txt introuvable")
+            return
+        
+        print("⏰ === Tâches CRON configurées ===\n")
+        
+        with open(cron_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('#'):
+                # Parser la ligne cron
+                parts = line.split()
+                if len(parts) >= 6:
+                    minute, hour, day, month, weekday = parts[0:5]
+                    command = ' '.join(parts[6:])
+                    
+                    print(f"🔹 Planification: {minute} {hour} {day} {month} {weekday}")
+                    print(f"   Commande: {command}")
+                    
+                    # Explication lisible
+                    explanation = []
+                    if minute == '*':
+                        explanation.append("chaque minute")
+                    else:
+                        explanation.append(f"à la minute {minute}")
+                    
+                    if hour == '*':
+                        explanation.append("de chaque heure")
+                    else:
+                        explanation.append(f"à {hour}h")
+                    
+                    if weekday != '*':
+                        days = {0: 'dimanche', 1: 'lundi', 2: 'mardi', 3: 'mercredi', 
+                               4: 'jeudi', 5: 'vendredi', 6: 'samedi'}
+                        explanation.append(f"le {days.get(int(weekday), weekday)}")
+                    
+                    if day != '*':
+                        explanation.append(f"le jour {day}")
+                    
+                    if month != '*':
+                        explanation.append(f"du mois {month}")
+                    
+                    print(f"   📝 {' '.join(explanation)}")
+                    print()
+            elif line.startswith('#'):
+                print(f"💬 {line}")
+        
+        logger.info("Affichage des tâches cron terminé")
+        
+    except Exception as e:
+        error_msg = f"❌ Erreur lors de l'affichage des tâches cron: {e}"
+        logger.error(error_msg)
+        print(error_msg)
 
 @cli.command("shell")
 def interactive_shell():
