@@ -92,8 +92,6 @@ Ce projet utilise APScheduler pour planifier des tâches récurrentes comme :
 
 ---
 
-docker buildx build  --no-cache --platform linux/arm64 -t 905418050370.dkr.ecr.eu-west-3.amazonaws.com/flaskfolio:latest  --push  .
----
 
 ##  👤 Guide utilisateur
 
@@ -627,3 +625,4 @@ Ce projet est sous licence MIT.
 
 Souhaites-tu que je crée directement ce fichier dans le dépôt local du projet (dans un fichier `README.md`) ou que je le modifie ensuite avec des sections supplémentaires (par exemple pour un guide utilisateur, une documentation API ou des captures d’écran) ?
 ```
+
