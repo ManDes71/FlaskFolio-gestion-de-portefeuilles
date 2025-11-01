@@ -123,6 +123,26 @@ def update_data(historique):
                 logger.error(f"❌ Erreur lors de la mise à jour de l'historique: {e}")
                 print(f"❌ Erreur historique: {e}")
 
+@cli.command("scrape_intraday")
+def scrape_intraday():
+    """
+    🔍 Lance manuellement le scraping intraday depuis Boursorama
+    Usage : python manage.py scrape_intraday
+    """
+    logger.info("🔍 Commande 'scrape_intraday' exécutée")
+    
+    with app.app_context():
+        try:
+            from pea_trading.services.scheduler_jobs import job_scraping_intraday
+            print("🔁 Scraping intraday en cours...")
+            logger.info("🔁 Début du scraping intraday manuel")
+            job_scraping_intraday(app, db)
+            print("✅ Scraping intraday terminé.")
+            logger.info("✅ Scraping intraday terminé avec succès")
+        except Exception as e:
+            error_msg = f"❌ Erreur lors du scraping intraday: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
 @cli.command("init-db")
 @click.option("--force", is_flag=True, help="Recharge le portefeuille même si non vide")
@@ -564,27 +584,35 @@ def import_cash_movements_csv(portfolio_name, filename):
 
 @cli.command("show_logs")
 @click.option("--lines", default=50, help="Nombre de lignes à afficher (défaut: 50)")
-@click.option("--type", "log_type", default="manage", help="Type de log: 'manage', 'scheduler' ou 'all'")
+@click.option("--type", "log_type", default="manage", help="Type de log: 'manage', 'scheduler', 'intraday', 'yfinance' ou 'all'")
 def show_logs(lines, log_type):
     """
     📄 Affiche les logs récents
-    Usage : python manage.py show_logs --lines=20 --type=manage
+    Usage : python manage.py show_logs --lines=20 --type=yfinance
     """
     logger.info(f"📄 Commande 'show_logs' exécutée - lines: {lines}, type: {log_type}")
     
-    log_dir = os.path.join(os.path.dirname(__file__), 'pea_trading', 'static', 'logs')
+    # Deux emplacements possibles pour les logs
+    log_dir_static = os.path.join(os.path.dirname(__file__), 'pea_trading', 'static', 'logs')
+    log_dir_local = os.path.join(os.path.dirname(__file__), 'logs_local')
     
     if log_type == "manage":
-        log_files = [os.path.join(log_dir, 'manage.log')]
+        log_files = [os.path.join(log_dir_static, 'manage.log')]
     elif log_type == "scheduler":
-        log_files = [os.path.join(log_dir, 'scheduler.log')]
+        log_files = [os.path.join(log_dir_static, 'scheduler.log')]
+    elif log_type == "intraday":
+        log_files = [os.path.join(log_dir_local, 'intraday.log')]
+    elif log_type == "yfinance":
+        log_files = [os.path.join(log_dir_local, 'yfinance.log')]
     elif log_type == "all":
         log_files = [
-            os.path.join(log_dir, 'manage.log'),
-            os.path.join(log_dir, 'scheduler.log')
+            os.path.join(log_dir_static, 'manage.log'),
+            os.path.join(log_dir_static, 'scheduler.log'),
+            os.path.join(log_dir_local, 'intraday.log'),
+            os.path.join(log_dir_local, 'yfinance.log')
         ]
     else:
-        print(f"❌ Type de log invalide: {log_type}. Utilisez 'manage', 'scheduler' ou 'all'")
+        print(f"❌ Type de log invalide: {log_type}. Utilisez 'manage', 'scheduler', 'intraday', 'yfinance' ou 'all'")
         return
     
     for log_file in log_files:

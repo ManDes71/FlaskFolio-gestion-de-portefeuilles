@@ -202,3 +202,19 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Scripts de test et fichiers temporaires créés pendant le développement
+check_routes.py
+check_logs_location.sh
+cleanup_container.sh
+cleanup_temp_files.sh
+diagnostic_scheduler.sh
+restart_scheduler.sh
+test_logs.sh
+test_logs_complete.sh
+test_show_logs.sh
+test_sync.sh
+manage_working.py
+manage_with_logs.py
+manage_logs_copy.log
+output.log

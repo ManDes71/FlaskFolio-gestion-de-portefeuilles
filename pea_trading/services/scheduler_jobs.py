@@ -88,20 +88,34 @@ def job_update_stocks(app):
 
 def job_scraping_intraday(app, db):
     from pea_trading.portfolios.stock import Stock, StockPriceHistory
-    from pea_trading.services.live_scraper import  get_stock_prices, get_stock_info
+    from pea_trading.services.live_scraper import get_stock_prices, get_stock_info, intraday_logger
+    
     if is_today_closed():
-        print("📅 Aujourd’hui est un jour férié. Pas de scraping.")
+        print("📅 Aujourd'hui est un jour férié. Pas de scraping.")
+        intraday_logger.info("📅 Jour férié détecté - Pas de scraping")
         return
-    print(f"[{datetime.now()}] ⚡ Job scraping Boursorama en cours...")
+    
+    # 📊 LOG: Début du scraping
+    start_time = datetime.now()
+    intraday_logger.info("=" * 80)
+    intraday_logger.info(f"🚀 DÉBUT DU SCRAPING INTRADAY - {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    intraday_logger.info("=" * 80)
+    
+    print(f"[{start_time}] ⚡ Job scraping Boursorama en cours...")
+    
     with app.app_context():
         today = datetime.now().date()
         updated = 0
+        total_scraped = 0
+        matched_isins = 0
 
         # Récupère toutes les lettres (A-Z)
         for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             stocks = get_stock_prices(letter)
+            intraday_logger.info(f"📝 Lettre {letter}: {len(stocks)} actions trouvées sur Boursorama")
 
             for stock in stocks:
+                total_scraped += 1
                 #name = stock.get("name")
                 price = stock.get("price")
                 code = stock.get("symbol")
@@ -117,6 +131,7 @@ def job_scraping_intraday(app, db):
                 try:
                     stock = Stock.query.filter_by(isin=isin).first()
                     if stock:
+                        matched_isins += 1
                         print(f"✅ {isin} trouvé")
                         stock.current_price = price
                         stock.last_updated = datetime.now(paris_tz)
@@ -164,9 +179,23 @@ def job_scraping_intraday(app, db):
         try:
             db.session.commit()
             print(f"✅ Scraping terminé : {updated} valeurs mises à jour.")
+            
+            # 📊 LOG: Fin du scraping avec statistiques
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            
+            intraday_logger.info("=" * 80)
+            intraday_logger.info(f"✅ FIN DU SCRAPING INTRADAY - {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            intraday_logger.info(f"⏱️  Durée: {duration:.2f} secondes")
+            intraday_logger.info(f"📊 Total scrapé: {total_scraped} actions sur Boursorama")
+            intraday_logger.info(f"🎯 ISINs matchés: {matched_isins}/{total_scraped} ({(matched_isins/total_scraped*100 if total_scraped > 0 else 0):.1f}%)")
+            intraday_logger.info(f"💾 Valeurs mises à jour en base: {updated}")
+            intraday_logger.info("=" * 80)
+            
         except Exception as e:
             db.session.rollback()
             logger.error(f"❌ Commit final échoué : {e}")
+            intraday_logger.error(f"❌ ERREUR lors du commit final: {e}")
             print(f"❌ Commit final échoué : {e}")
         print(f"✅ Scraping terminé : {updated} valeurs mises à jour (cours + historique).")
         #stocks = Stock.query.all()

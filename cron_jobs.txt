@@ -1,18 +1,15 @@
-# Export CSV chaque samedi à midi (sans 'root')
-0 12 * * 6 cd /app && python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
-0 12 * * 6 cd /app && python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
-0 12 * * 6 cd /app && python manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv"
-0 12 * * 6 cd /app && python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
-0 11 * * 6 cd /app && python manage.py export_portfolio_csv "PEA"
-0 11 * * 6 cd /app && python manage.py export_portfolio_csv "PEA-PME"
-0 10 * * 6 cd /app && python manage.py export_all_stocks_csv
-0 10 * * 6 cd /app && python manage.py export_all_stock_history_csv
+# Export CSV chaque samedi a midi
+0 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv" >> /app/pea_trading/static/logs/cron.log 2>&1
+10 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv" >> /app/pea_trading/static/logs/cron.log 2>&1
+15 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv" >> /app/pea_trading/static/logs/cron.log 2>&1
+20 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv" >> /app/pea_trading/static/logs/cron.log 2>&1
+25 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_portfolio_csv "PEA" >> /app/pea_trading/static/logs/cron.log 2>&1
+30 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_portfolio_csv "PEA-PME" >> /app/pea_trading/static/logs/cron.log 2>&1
+35 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_all_stocks_csv >> /app/pea_trading/static/logs/cron.log 2>&1
+40 8 * * 6 cd /app && /usr/local/bin/python3 manage.py export_all_stock_history_csv >> /app/pea_trading/static/logs/cron.log 2>&1
 
-
-# Export CSV mensuel (le 1er de chaque mois à midi)
-0 12 1 * * cd /app && python manage.py export_transactions_csv "PEA"
-0 12 1 * * cd /app && python manage.py export_transactions_csv "PEA-PME"
-0 12 1 * * cd /app && python manage.py export_cash_mouvements_csv "PEA"
-0 12 1 * * cd /app && python manage.py export_cash_mouvements_csv "PEA-PME"
-
-
+# Export CSV mensuel (le 1er de chaque mois a midi)
+10 9 1 * * cd /app && /usr/local/bin/python3 manage.py export_transactions_csv "PEA" >> /app/pea_trading/static/logs/cron.log 2>&1
+15 9 1 * * cd /app && /usr/local/bin/python3 manage.py export_transactions_csv "PEA-PME" >> /app/pea_trading/static/logs/cron.log 2>&1
+20 9 1 * * cd /app && /usr/local/bin/python3 manage.py export_cash_mouvements_csv "PEA" >> /app/pea_trading/static/logs/cron.log 2>&1
+25 9 1 * * cd /app && /usr/local/bin/python3 manage.py export_cash_mouvements_csv "PEA-PME" >> /app/pea_trading/static/logs/cron.log 2>&1

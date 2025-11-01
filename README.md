@@ -50,35 +50,139 @@ Elle fournit un suivi des cours en temps réel, l’import de transactions, ains
 - `utils/` : Utilitaires tels que l'envoi d'emails et la gestion des jours fériés
 
 
-## 🧩 Structure 
+## 🧩 Structure du projet
 
 ```
 .
-├── .env
-├── app.py
-├── docker-compose.yml
-├── dockerfile
-├── manage.py
-├── prometheus.yml
-├── README.md
-├── requirements.txt
-├── tasks_scheduler.py
-├── config/
-│   └── settings.py
-├── pea_trading/
-│   ├── __init__.py
-│   ├── admin/
-│   ├── error_pages/
-│   ├── portfolios/
-│   ├── services/
-│   ├── static/
-│   └── templates/
-│   ├── users/
-│   ├── utils/
-
-
-
+├── 📄 Fichiers principaux
+│   ├── .env                          # Variables d'environnement (SECRET_KEY, DATABASE_URL, MAIL_*)
+│   ├── .dockerignore                 # Exclusions pour le build Docker
+│   ├── app.py                        # Point d'entrée de l'application
+│   ├── check_db.py                   # Vérification de l'état de la base de données
+│   ├── manage.py                     # CLI avec commandes utiles (update, export, import, logs, etc.)
+│   ├── tasks_scheduler.py            # Configuration des tâches planifiées (legacy)
+│   ├── requirements.txt              # Dépendances Python
+│   ├── README.md                     # Documentation du projet
+│   ├── LICENSE                       # Licence du projet
+│
+├── 🐳 Docker
+│   ├── dockerfile                    # Image Docker de l'application
+│   ├── docker-compose.yml            # Orchestration des services (web, prometheus, grafana)
+│   ├── docker-compose-classique.yml  # Configuration alternative
+│   ├── cleanup_container.sh          # Script de nettoyage des conteneurs
+│   ├── cleanup_temp_files.sh         # Script de nettoyage des fichiers temporaires
+│
+├── ⚙️ Configuration
+│   ├── config/
+│   │   ├── settings.py               # Configuration Flask (Dev, Prod, Test)
+│   │   └── stocks.py                 # Configuration des actions suivies
+│   ├── cron_jobs.txt                 # Tâches cron pour exports hebdomadaires
+│   └── prometheus.yml                # Configuration Prometheus (monitoring)
+│
+├── 🗄️ Base de données
+│   ├── db_data/                      # 📁 Volume Docker - Base SQLite
+│   │   └── data.sqlite               # Base de données principale
+│   └── migrations/                   # Migrations Alembic
+│       ├── alembic.ini
+│       ├── env.py
+│       └── versions/                 # Historique des migrations
+│           ├── 55bed6705752_initial_migration.py
+│           ├── 7d29813a6974_ajout_des_colonnes_max_min_et_target.py
+│           └── 204481c175d9_ajout_transaction_et_cashmovement.py
+│
+├── 📊 Logs et exports
+│   ├── logs_local/                   # 📁 Volume Docker - Logs personnalisés
+│   │   ├── .gitkeep
+│   │   ├── README.md                 # Documentation des logs
+│   │   ├── intraday.log              # Logs scraping Boursorama
+│   │   ├── yfinance.log              # Logs Yahoo Finance
+│   │   └── manage.log                # Logs des commandes manage.py
+│   ├── exports_local/                # 📁 Volume Docker - Exports CSV
+│   └── uploads_local/                # 📁 Volume Docker - Uploads utilisateurs
+│
+├── 🧪 Tests
+│   └── tests/
+│       ├── __init__.py
+│       └── test_app.py               # Tests unitaires
+│
+├── 📸 Documentation
+│   └── ImagesMd/                     # Captures d'écran pour le README
+│       ├── FlaskFolio_admin.jpg
+│       ├── FlaskFolio_login.jpg
+│       └── ...
+│
+└── 🎯 Application principale
+    └── pea_trading/
+        ├── __init__.py               # Initialisation Flask, DB, Scheduler
+        │
+        ├── admin/                    # 👤 Module d'administration
+        │   ├── __init__.py
+        │   ├── forms_admin.py        # Formulaires admin
+        │   └── views_admin.py        # Routes admin (/admin/*)
+        │
+        ├── portfolios/               # 📊 Gestion des portefeuilles
+        │   ├── portfolio.py          # Modèles Portfolio, Position, Transaction, CashMovement
+        │   ├── stock.py              # Modèles Stock, StockPriceHistory
+        │   └── views_portfolio.py    # Routes portefeuilles (/portfolios/*)
+        │
+        ├── users/                    # 🔐 Gestion des utilisateurs
+        │   ├── __init__.py
+        │   ├── forms_users.py        # Formulaires (login, register, update)
+        │   ├── models.py             # Modèle User
+        │   ├── picture_handler.py    # Gestion des photos de profil
+        │   └── views_users.py        # Routes utilisateurs (/login, /register, etc.)
+        │
+        ├── services/                 # 🔧 Services métier
+        │   ├── alertes.py            # Détection des alertes de prix
+        │   ├── export_utils.py       # Export CSV (positions, transactions, cash)
+        │   ├── import_utils.py       # Import CSV
+        │   ├── finance_ops.py        # Opérations financières (calculs de performance)
+        │   ├── live_scraper.py       # 🌐 Scraping Boursorama (intraday + logger)
+        │   ├── yahoo_finance.py      # 📈 API Yahoo Finance (prix + historique + logger)
+        │   ├── technical_indicators.py # Indicateurs techniques (Ichimoku, etc.)
+        │   ├── portfolio_loader.py   # Chargement initial des données
+        │   ├── scheduler_jobs.py     # Jobs planifiés (alertes, update, scraping)
+        │   └── scheduler_utils.py    # Utilitaires scheduler (APScheduler)
+        │
+        ├── utils/                    # 🛠️ Utilitaires
+        │   └── notifications.py      # Envoi d'emails, gestion jours fériés
+        │
+        ├── error_pages/              # ⚠️ Gestion des erreurs
+        │   └── handlers.py           # Handlers 404, 500, etc.
+        │
+        ├── static/                   # 📁 Fichiers statiques
+        │   ├── master.css            # Feuille de style principale
+        │   ├── master.js             # Scripts JavaScript
+        │   ├── exports/              # 📁 Volume Docker - Exports CSV
+        │   ├── uploads/              # 📁 Volume Docker - Uploads
+        │   ├── profile_pics/         # Photos de profil des utilisateurs
+        │   └── logs/                 # 📁 Volume Docker - Logs scheduler
+        │       ├── scheduler.log     # Logs du scheduler APScheduler
+        │       └── manage.log        # Logs des commandes manage.py
+        │
+        └── templates/                # 🎨 Templates Jinja2
+            ├── base.html             # Template de base
+            ├── index.html            # Page d'accueil / Dashboard
+            ├── login.html, register.html, account.html
+            ├── select_portfolio.html # Sélection du portefeuille
+            ├── portfolio_history.html, stock_history.html
+            ├── transactions.html, liquidites.html
+            ├── admin*.html           # Templates admin
+            ├── pagination.html       # Composant pagination
+            ├── emails/               # Templates d'emails
+            │   └── alertes.html      # Email d'alertes
+            └── error_pages/          # Pages d'erreur
+                ├── 404.html
+                └── 500.html
 ```
+
+### 📁 Volumes Docker montés
+
+Les dossiers suivants sont montés comme volumes persistants :
+- `db_data/` → `/app/db_data` : Base de données SQLite
+- `logs_local/` → `/app/logs_local` ET `/app/pea_trading/static/logs` : Tous les logs
+- `exports_local/` → `/app/pea_trading/static/exports` : Exports CSV
+- `uploads_local/` → `/app/pea_trading/static/uploads` : Fichiers uploadés
 
 ---
 🔁 Tâches planifiées avec APScheduler
@@ -92,8 +196,6 @@ Ce projet utilise APScheduler pour planifier des tâches récurrentes comme :
 
 ---
 
-docker buildx build  --no-cache --platform linux/arm64 -t 905418050370.dkr.ecr.eu-west-3.amazonaws.com/flaskfolio:latest  --push  .
----
 
 ##  👤 Guide utilisateur
 
@@ -189,7 +291,6 @@ Il est possible de lancer le Scheduler ou de relancer à partir du menu d'admini
 1. **Cloner le dépôt**
 
 ```bash
-git clone https://github.com/votre-utilisateur/pea-trading.git
 git clone git@github.com:ManDes71/FlaskFolio-gestion-de-portefeuilles.git
 cd FlaskFolio-gestion-de-portefeuilles
 ````
@@ -206,31 +307,46 @@ MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-email-password
 ```
 
-## **Démarrer l’application avec Docker**
+## **Démarrer l'application avec Docker**
+
+> ℹ️ **Note** : Ce projet utilise **Docker Compose V2**. La commande est `docker compose` (avec un espace) au lieu de `docker-compose` (avec un tiret).
 
 ```bash
-docker-compose down
-docker-compose build
-docker-compose up -d
+# Arrêter les conteneurs existants
+docker compose down
+
+# Construire l'image
+docker compose build
+
+# Démarrer en arrière-plan
+docker compose up -d
 ```
 
 
-## lancer ces commandes en lignes en shell interactif
+## Lancer des commandes en shell interactif
 ```bash
-docker-compose exec web bash
+# Accéder au conteneur en mode interactif
+docker compose exec web bash
 
- - python manage.py import_portfolio_positions_csv "PEA" portefeuille_export_PEA.csv 
+# Puis exécuter les commandes manage.py :
+python manage.py import_portfolio_positions_csv "PEA" portefeuille_export_PEA.csv 
+python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
+python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
+python manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv"
+python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
 
- - python manage.py export_transactions_csv "PEA" --output "transactions_export_PEA.csv"
- - python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
- - python manage.py export_cash_mouvements_csv "PEA" --output "cash_mouvements_export_PEA.csv"
- - python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
+# Sortir du conteneur
+exit
+```
 
+## Consulter les logs
 
-docker-compose logs -f web
+```bash
+# Logs en temps réel
+docker compose logs -f web
 
-
-
+# Dernières 100 lignes
+docker compose logs --tail=100 web
 ```
 
 L'application sera disponible sur `http://127.0.0.1:5000/portefolios`.
@@ -265,7 +381,7 @@ python manage.py run --env=prod --host=0.0.0.0 --port=8000
 ou avec docker :
 
 ```bash
-docker exec -it pea-trading-app python manage.py export_transactions_csv "PEA-PME" --output "static/exports/transactions_export_PEA-PME.csv"
+docker compose exec web python manage.py export_transactions_csv "PEA-PME" --output "static/exports/transactions_export_PEA-PME.csv"
 ```
 
 ---
@@ -328,7 +444,7 @@ python  manage.py change_password user@example.com
 ou avec docker :
 
 ```bash
-docker exec -it pea-trading-app python manage.py change_password user@example.com
+docker compose exec web python manage.py change_password user@example.com
 ```
 ---
 
@@ -492,7 +608,7 @@ Exemple :
     python manage.py export_transactions_csv "PEA"
     python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
 
-    docker exec -it pea-trading-app python manage.py export_transactions_csv "PEA-PME" --output "static/exports/transactions_export_PEA-PME.csv"
+    docker compose exec web python manage.py export_transactions_csv "PEA-PME" --output "static/exports/transactions_export_PEA-PME.csv"
 ```
 
 ---
@@ -573,6 +689,86 @@ Exemple :
 ```bash
     python  manage.py import_cash_movements_csv "PEA-PME" cash_mouvements_PEA-PME_20250531_223806.csv      
 ```
+---
+
+### 📅 `show_scheduler` — Afficher les tâches planifiées (scheduler jobs)
+
+```python
+@cli.command("show_scheduler")
+def show_scheduler():
+```
+
+* Affiche les tâches planifiées du scheduler APScheduler.
+* Liste les jobs avec leurs ID, nom, fonction, déclencheur et prochaine exécution.
+* Utile pour vérifier que les jobs automatiques sont bien configurés (alertes, mise à jour des cours, scraping).
+
+Exemple :
+
+```bash
+python manage.py show_scheduler
+
+# Depuis Docker :
+docker compose exec web python manage.py show_scheduler
+```
+
+**Sortie exemple :**
+```
+📅 === Tâches planifiées (3 job(s)) ===
+
+🔹 Job ID: job_alertes
+   Nom: job_alertes
+   Fonction: job_alertes
+   Déclencheur: day_of_week=0-4, hour=18, minute=30
+   Prochaine exécution: 2025-11-03 18:30:00 UTC
+
+🔹 Job ID: job_update_stocks
+   Nom: job_update_stocks
+   Fonction: job_update_stocks
+   Déclencheur: day_of_week=0-4, hour=8, minute=0
+   Prochaine exécution: 2025-11-03 08:00:00 UTC
+
+🔹 Job ID: job_scraping_intraday
+   Nom: job_scraping_intraday
+   Fonction: job_scraping_intraday
+   Déclencheur: day_of_week=0-4, hour=9-17, minute=0
+   Prochaine exécution: 2025-11-01 15:00:00 UTC
+```
+
+---
+
+### ⏰ `show_cron` — Afficher les tâches cron configurées
+
+```python
+@cli.command("show_cron")
+def show_cron():
+```
+
+* Affiche les tâches cron définies dans le fichier `cron_jobs.txt`.
+* Parse et explique en français la planification de chaque tâche.
+* Utile pour vérifier les exports automatiques hebdomadaires.
+
+Exemple :
+
+```bash
+python manage.py show_cron
+
+# Depuis Docker :
+docker compose exec web python manage.py show_cron
+```
+
+**Sortie exemple :**
+```
+⏰ === Tâches CRON configurées ===
+
+🔹 Planification: 0 20 * * 0
+   Commande: cd /app && /usr/local/bin/python /app/manage.py export_transactions_csv "PEA" --output "static/exports/transactions_export_PEA.csv"
+   📝 à la minute 0 à 20h le dimanche
+
+🔹 Planification: 5 20 * * 0
+   Commande: cd /app && /usr/local/bin/python /app/manage.py export_cash_mouvements_csv "PEA" --output "static/exports/cash_mouvements_export_PEA.csv"
+   📝 à la minute 5 à 20h le dimanche
+```
+
 ---
 
 ### ✅ `test` — Lancer les tests unitaires

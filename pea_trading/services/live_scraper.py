@@ -7,6 +7,31 @@ import re
 from pea_trading import db
 from pea_trading.portfolios.stock import Stock
 import json
+import logging
+import os
+
+# 📂 Configuration du logging pour intraday scraper
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs_local')
+os.makedirs(log_dir, exist_ok=True)
+
+# 📄 Fichier de log pour le scraping intraday
+log_file = os.path.join(log_dir, 'intraday.log')
+
+# ⚙️ Configuration du logger pour intraday
+intraday_logger = logging.getLogger("intraday_scraper")
+intraday_logger.setLevel(logging.INFO)
+
+# Handler pour fichier
+file_handler = logging.FileHandler(log_file, encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+
+# Formatter
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+file_handler.setFormatter(formatter)
+
+# Ajouter le handler s'il n'existe pas déjà
+if not intraday_logger.handlers:
+    intraday_logger.addHandler(file_handler)
 
 
 def clean_price(text):
