@@ -1,0 +1,8 @@
+# alertmanager/config.ym
+
+route:
+  group_by: ['alertname']
+  receiver: 'devnull'
+
+receivers:
+- name: 'devnull'  

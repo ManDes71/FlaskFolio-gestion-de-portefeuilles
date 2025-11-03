@@ -349,7 +349,12 @@ docker compose logs -f web
 docker compose logs --tail=100 web
 ```
 
-L'application sera disponible sur `http://127.0.0.1:5000/portefolios`.
+L'application sera disponible sur `http://127.0.0.1:5000/portfolios`.
+
+http://localhost:9090/
+http://localhost:9093  -> alertmanager
+http://localhost:3000  -> grafana
+http://localhost:3000/playlists/play/cf2udm3mw01kwf?kiosk=true-> grafana
 
 Ce fichier `manage.py` est un **script de gestion personnalisé** pour une application Flask appelée `pea_trading`. Il utilise **Click** (via `flask.cli.FlaskGroup`) pour proposer une **interface en ligne de commande** avec plusieurs commandes utiles pour le développement, l’administration et les tests de l’application.
 
