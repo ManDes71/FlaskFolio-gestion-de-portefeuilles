@@ -1,6 +1,103 @@
+## ✅ Alertes Prometheus configurées
+
+**8 alertes actives** pour surveiller les jobs cron :
+
+| Alerte | Condition | Sévérité | Description |
+|--------|-----------|----------|-------------|
+| 🔴 **CronJobFailed** | Job échoue | Critical | Alerte immédiate |
+| ⚠️ **CronJobTooSlow** | Durée > 60s | Warning | Performance |
+| 📅 **CronJobNotExecutedFor8Days** | Pas exécuté 8j | Warning | Job oublié |
+| 🔴 **CronJobNotExecutedFor2Weeks** | Pas exécuté 14j | Critical | Job critique |
+| 📊 **CronJobNoRecordsProcessed** | 0 enregistrement | Warning | Données vides |
+| 🔥 **AllCronJobsFailed** | 3+ jobs échouent | Critical | Problème système |
+| 🕐 **CronJobHistoryTooSlow** | Export > 120s | Warning | Export lent |
+| ⏱️ **CronJobStuckRunning** | Job bloqué 5min | Warning | Job planté |
+
+📖 **Documentation complète** : [ALERTES_PROMETHEUS.md](./ALERTES_PROMETHEUS.md)
+
+🔍 **Interfaces** :
+- Prometheus Alerts : http://localhost:9090/alerts
+- Alertmanager : http://localhost:9093
+- Grafana Dashboard : http://localhost:3000
+
+
+grafana                                               0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+pea-trading-app                                       0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+prometheus                                            0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+pushgateway                                           0.0.0.0:9091->9091/tcp, [::]:9091->9091/tcp
+
+
+
+🎯 Résumé
+Phase	Statut	Durée estimée	Livrables
+Phase 1	✅ Terminée	2h30	Code instrumenté + 10 métriques
+Phase 2	✅ Terminée	1h	5 alertes Prometheus
+Phase 3	🔄 En cours	2-3h	Dashboard Grafana
+Phase 4	⏳ À faire	1-2h	Tests de validation
+Phase 5	⏳ À faire	1h	Documentation complète
+Total restant : ~4-6h de travail
+
+### 🧪 Tester les alertes
+
+```bash
+# Simuler un job en échec
+docker compose exec web python /app/test_alert_simulation.py failed
+
+# Simuler un job lent
+docker compose exec web python /app/test_alert_simulation.py slow
+
+# Simuler un job vide
+docker compose exec web python /app/test_alert_simulation.py empty
+
+# Tout tester d'un coup
+docker compose exec web python /app/test_alert_simulation.py all
+```
+
+Puis consulter : http://localhost:9090/alerts (attendre 1-2 minutes)
 
 ---
 
+## 📊 Monitoring du Scraping Intraday
+
+**10 métriques** pour surveiller le scraping quotidien Boursorama :
+
+| Métrique | Description | Seuil alerte |
+|----------|-------------|--------------|
+| 🎯 **scraping_success** | Succès/Échec du scraping | 0 = échec |
+| ⏱️ **scraping_duration_seconds** | Durée d'exécution | > 600s (10min) |
+| 📈 **scraping_stocks_scraped_total** | Actions trouvées sur Boursorama | - |
+| ✅ **scraping_stocks_matched_count** | Actions matchées (ISIN) | - |
+| 💾 **scraping_stocks_updated_count** | Actions mises à jour en BDD | 0 |
+| 📊 **scraping_match_rate_percent** | Taux de match (%) | < 10% |
+| ➕ **scraping_history_created_count** | Nouveaux historiques créés | - |
+| 🔄 **scraping_history_updated_count** | Historiques mis à jour | - |
+| 🕐 **scraping_last_execution_timestamp** | Dernière exécution | > 1h |
+| ❌ **scraping_error** | Message d'erreur | présent |
+
+📖 **Documentation complète** : [PHASE1_SCRAPING_MONITORING_COMPLETE.md](./PHASE1_SCRAPING_MONITORING_COMPLETE.md)
+
+### 🧪 Tester le monitoring du scraping
+
+```bash
+# Simuler un scraping réussi
+docker compose exec web python /app/test_scraping_simulation.py success
+
+# Simuler un scraping échoué
+docker compose exec web python /app/test_scraping_simulation.py failed
+
+# Simuler un scraping lent (>10min)
+docker compose exec web python /app/test_scraping_simulation.py slow
+
+# Simuler un taux de match faible
+docker compose exec web python /app/test_scraping_simulation.py low_match
+
+# Tous les scénarios
+docker compose exec web python /app/test_scraping_simulation.py all
+```
+
+Vérifier les métriques : `curl http://localhost:9091/metrics | grep scraping_`
+
+---
 
 # 📈 FlaskFolio – Gestion de Portefeuilles Boursier
 

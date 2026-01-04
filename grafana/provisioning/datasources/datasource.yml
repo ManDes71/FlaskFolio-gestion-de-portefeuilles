@@ -12,6 +12,8 @@ deleteDatasources:
 datasources:
   # <string, required> nom de la source de données. Requis
   - name: Prometheus
+    # <string> UID unique de la datasource
+    uid: prometheus
     # <string, required> type de source de données. Requis
     type: prometheus
     # <string, required> Mode d'accès. directe ou par procuration. Requis

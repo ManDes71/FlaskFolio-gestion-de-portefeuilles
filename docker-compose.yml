@@ -90,14 +90,13 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.52.0
     command:
-      - --docker_only=true
       - --housekeeping_interval=30s
+      - --docker_only=false
+      - --storage_driver_buffer_duration=1m0s
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:rw
+      - /var/run:/var/run:ro
       - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - /var/lib/docker:/rootfs/var/lib/docker:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     privileged: true  
     ports:
@@ -111,6 +110,9 @@ services:
     container_name: grafana
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=VanGogh
+      - GF_SECURITY_ADMIN_PASSWORD=Van@24  
    # environment:
    #   - GF_AUTH_ANONYMOUS_ENABLED=true
    #   - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer

@@ -1,8 +1,86 @@
-# alertmanager/config.ym
+global:
+  resolve_timeout: 5m
+  
+# Configuration des templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
 
+# Route principale
 route:
-  group_by: ['alertname']
-  receiver: 'devnull'
+  receiver: 'default-receiver'
+  group_by: ['alertname', 'severity', 'component']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 4h
+  
+  # Routes spécifiques par sévérité
+  routes:
+    # Alertes critiques : envoi immédiat
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 1h
+    
+    # Alertes warnings : regroupement
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 4h
 
+# Inhibition rules : éviter les doublons
+inhibit_rules:
+  # Si tous les jobs échouent, ne pas envoyer d'alerte individuelle
+  - source_match:
+      alertname: 'AllCronJobsFailed'
+    target_match:
+      alertname: 'CronJobFailed'
+    equal: ['component']
+  
+  # Si un job n'a pas été exécuté depuis 2 semaines, supprimer l'alerte 8 jours
+  - source_match:
+      alertname: 'CronJobNotExecutedFor2Weeks'
+    target_match:
+      alertname: 'CronJobNotExecutedFor8Days'
+    equal: ['job_name']
+
+# Receivers : définir comment envoyer les alertes
 receivers:
-- name: 'devnull'  
+  # Receiver par défaut : logs uniquement
+  - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+  
+  # Alertes critiques
+  - name: 'critical-alerts'
+    # Configuration email (à personnaliser avec vos identifiants)
+    # email_configs:
+    #   - to: 'admin@example.com'
+    #     from: 'alertmanager@example.com'
+    #     smarthost: 'smtp.gmail.com:587'
+    #     auth_username: 'your-email@gmail.com'
+    #     auth_password: 'your-app-password'
+    #     headers:
+    #       Subject: '🔴 ALERTE CRITIQUE: {{ .GroupLabels.alertname }}'
+    
+    # Webhook pour intégration personnalisée (Slack, Discord, etc.)
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/critical'
+        send_resolved: true
+  
+  # Alertes warnings
+  - name: 'warning-alerts'
+    # email_configs:
+    #   - to: 'admin@example.com'
+    #     from: 'alertmanager@example.com'
+    #     smarthost: 'smtp.gmail.com:587'
+    #     auth_username: 'your-email@gmail.com'
+    #     auth_password: 'your-app-password'
+    #     headers:
+    #       Subject: '⚠️ ALERTE: {{ .GroupLabels.alertname }}'
+    
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/warning'
+        send_resolved: true

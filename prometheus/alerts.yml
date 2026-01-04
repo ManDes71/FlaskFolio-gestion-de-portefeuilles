@@ -1,0 +1,300 @@
+groups:
+  - name: cron_jobs_alerts
+    interval: 1m
+    rules:
+      # ❌ ALERTE IMMÉDIATE : Job échoué
+      - alert: CronJobFailed
+        expr: cron_job_success == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: cron
+        annotations:
+          summary: "❌ Job cron {{ $labels.job_name }} a échoué"
+          description: |
+            Le job **{{ $labels.job_name }}** est en échec depuis 2 minutes.
+            
+            Statut: ÉCHEC (0)
+            Job: {{ $labels.job_name }}
+            Instance: {{ $labels.instance }}
+            
+            🔍 Actions recommandées:
+            - Vérifier les logs: docker compose logs web | grep {{ $labels.job_name }}
+            - Consulter le dashboard Grafana
+            - Vérifier l'erreur dans cron_job_error
+      
+      # ⚠️ ALERTE PERFORMANCE : Job trop lent
+      - alert: CronJobTooSlow
+        expr: cron_job_duration_seconds > 60
+        for: 1m
+        labels:
+          severity: warning
+          component: cron
+        annotations:
+          summary: "⚠️ Job cron {{ $labels.job_name }} est trop lent"
+          description: |
+            Le job **{{ $labels.job_name }}** prend trop de temps à s'exécuter.
+            
+            Durée actuelle: {{ $value }}s (seuil: 60s)
+            Job: {{ $labels.job_name }}
+            
+            🔍 Actions recommandées:
+            - Analyser les performances de la base de données
+            - Vérifier la charge système
+            - Optimiser les requêtes SQL
+      
+      # 🕐 ALERTE : Job trop lent (export_all_stock_history spécifique)
+      - alert: CronJobHistoryTooSlow
+        expr: cron_job_duration_seconds{job_name="export_all_stock_history"} > 120
+        for: 1m
+        labels:
+          severity: warning
+          component: cron
+        annotations:
+          summary: "⚠️ Export historique trop lent"
+          description: |
+            L'export de l'historique des actions prend plus de 2 minutes.
+            
+            Durée: {{ $value }}s (seuil: 120s)
+            Records: {{ query "cron_job_records_processed{job_name='export_all_stock_history'}" | first | value }}
+            
+            🔍 Vérifier le volume de données et l'optimisation du CSV
+      
+      # 📅 ALERTE : Job non exécuté depuis 8 jours
+      - alert: CronJobNotExecutedFor8Days
+        expr: (time() - cron_job_last_execution_timestamp) > 691200
+        for: 5m
+        labels:
+          severity: warning
+          component: cron
+        annotations:
+          summary: "📅 Job cron {{ $labels.job_name }} non exécuté depuis 8 jours"
+          description: |
+            Le job **{{ $labels.job_name }}** n'a pas été exécuté depuis plus de 8 jours.
+            
+            Délai écoulé: {{ $value }} secondes (seuil: 691200s = 8 jours)
+            Job: {{ $labels.job_name }}
+            
+            🔍 Actions recommandées:
+            - Vérifier que le cron est actif: docker compose exec web crontab -l
+            - Consulter les logs cron: docker compose exec web cat /app/logs_local/cron.log
+            - Vérifier l'état du conteneur
+      
+      # 🔴 ALERTE CRITIQUE : Job non exécuté depuis 2 semaines
+      - alert: CronJobNotExecutedFor2Weeks
+        expr: (time() - cron_job_last_execution_timestamp) > 1209600
+        for: 5m
+        labels:
+          severity: critical
+          component: cron
+        annotations:
+          summary: "🔴 Job cron {{ $labels.job_name }} non exécuté depuis 2 semaines"
+          description: |
+            **ALERTE CRITIQUE** : Le job {{ $labels.job_name }} n'a pas été exécuté depuis plus de 2 semaines !
+            
+            Délai écoulé: {{ $value }} secondes (seuil: 1209600s = 14 jours)
+            Job: {{ $labels.job_name }}
+            
+            ⚠️ Risque de perte de données ou de désynchronisation
+            
+            🔍 Actions urgentes:
+            - Redémarrer le service: docker compose restart web
+            - Exécuter manuellement: docker compose exec web python manage.py [commande]
+            - Vérifier les erreurs système
+      
+      # 📊 ALERTE : Aucun enregistrement traité (job vide)
+      - alert: CronJobNoRecordsProcessed
+        expr: cron_job_success == 1 and cron_job_records_processed == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: cron
+        annotations:
+          summary: "📊 Job cron {{ $labels.job_name }} n'a traité aucun enregistrement"
+          description: |
+            Le job **{{ $labels.job_name }}** s'est exécuté avec succès mais n'a traité aucun enregistrement.
+            
+            Records traités: 0
+            Durée: {{ query (printf "cron_job_duration_seconds{job_name='%s'}" $labels.job_name) | first | value }}s
+            
+            🔍 Cela peut indiquer:
+            - Un portefeuille vide
+            - Une erreur dans la logique de comptage
+            - Des données manquantes
+      
+      # 🔥 ALERTE : Tous les jobs en échec
+      - alert: AllCronJobsFailed
+        expr: count(cron_job_success == 0) >= 3
+        for: 5m
+        labels:
+          severity: critical
+          component: cron
+        annotations:
+          summary: "🔥 CRITIQUE : Plusieurs jobs cron en échec simultané"
+          description: |
+            **ALERTE SYSTÈME CRITIQUE** : {{ $value }} jobs sont en échec simultanément !
+            
+            🔍 Cela peut indiquer:
+            - Un problème de base de données
+            - Un problème réseau
+            - Un crash de l'application
+            - Un manque de ressources (disque, mémoire)
+            
+            ⚡ Actions urgentes:
+            - Vérifier l'état du conteneur: docker compose ps
+            - Consulter les logs: docker compose logs --tail=100 web
+            - Vérifier l'espace disque: df -h
+            - Redémarrer si nécessaire: docker compose restart web
+      
+      # ⏱️ ALERTE : Job en cours depuis trop longtemps
+      - alert: CronJobStuckRunning
+        expr: (time() - cron_job_last_execution_timestamp) < 60 and cron_job_duration_seconds > 300
+        for: 10m
+        labels:
+          severity: warning
+          component: cron
+        annotations:
+          summary: "⏱️ Job cron {{ $labels.job_name }} bloqué depuis plus de 5 minutes"
+          description: |
+            Le job **{{ $labels.job_name }}** semble bloqué en cours d'exécution.
+            
+            Durée d'exécution: {{ $value }}s (anormal si > 300s)
+            
+            🔍 Actions recommandées:
+            - Vérifier les processus: docker compose exec web ps aux | grep python
+            - Consulter les logs en temps réel: docker compose logs -f web
+            - Redémarrer le conteneur si nécessaire
+
+  # ========================================
+  # ALERTES SCRAPING INTRADAY BOURSORAMA
+  # ========================================
+  - name: scraping_intraday_alerts
+    interval: 1m
+    rules:
+      # 🔴 ALERTE CRITIQUE : Scraping échoué
+      - alert: ScrapingIntradayFailed
+        expr: scraping_success == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: scraping
+        annotations:
+          summary: "🔴 Scraping intraday Boursorama a échoué"
+          description: |
+            Le scraping intraday Boursorama est en échec depuis 5 minutes.
+            
+            Statut: ÉCHEC (0)
+            Durée: {{ query "scraping_duration_seconds" | first | value }}s
+            Actions scrapées: {{ query "scraping_stocks_scraped_total" | first | value }}
+            
+            🔍 Actions recommandées:
+            - Vérifier les logs: docker compose exec web tail -f /app/logs_local/intraday.log
+            - Vérifier l'accès à Boursorama: curl https://www.boursorama.com
+            - Tester manuellement: docker compose exec web python manage.py scrape_intraday
+            - Vérifier l'erreur: scraping_error metric
+      
+      # ⚠️ ALERTE PERFORMANCE : Scraping trop lent
+      - alert: ScrapingIntradayTooSlow
+        expr: scraping_duration_seconds > 600
+        for: 3m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "⚠️ Scraping intraday trop lent"
+          description: |
+            Le scraping Boursorama prend plus de 10 minutes (seuil: 600s).
+            
+            Durée actuelle: {{ $value }}s
+            Actions scrapées: {{ query "scraping_stocks_scraped_total" | first | value }}
+            Actions matchées: {{ query "scraping_stocks_matched_count" | first | value }}
+            
+            🔍 Causes possibles:
+            - Site Boursorama lent ou instable
+            - Problème réseau
+            - Trop de sleep() dans le code
+            - Charge système élevée
+            
+            💡 Actions:
+            - Vérifier la performance: curl -w "@-" https://www.boursorama.com
+            - Vérifier les logs intraday
+            - Analyser le temps par lettre (A-Z)
+      
+      # 📊 ALERTE : Taux de match anormalement bas
+      - alert: ScrapingMatchRateLow
+        expr: scraping_match_rate_percent < 5
+        for: 15m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "📊 Taux de match ISIN anormalement bas"
+          description: |
+            Seulement {{ $value }}% des actions scrapées matchent avec votre BDD.
+            
+            Actions scrapées: {{ query "scraping_stocks_scraped_total" | first | value }}
+            Actions matchées: {{ query "scraping_stocks_matched_count" | first | value }}
+            Taux de match: {{ $value }}% (attendu: >10%)
+            
+            🔍 Causes possibles:
+            - Changement du format HTML de Boursorama
+            - Problème d'extraction des codes ISIN
+            - Base de données vide ou corrompue
+            - Filtrage PEA trop restrictif
+            
+            💡 Actions:
+            - Vérifier les ISINs en BDD: docker compose exec web python /app/count_isins.py
+            - Inspecter le code de parsing dans live_scraper.py
+            - Vérifier un exemple: curl "https://www.boursorama.com/cours/1rPAIR/"
+      
+      # ⚠️ ALERTE : Aucune mise à jour malgré succès
+      - alert: ScrapingNoUpdates
+        expr: scraping_success == 1 and scraping_stocks_updated_count == 0
+        for: 30m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "⚠️ Scraping réussi mais 0 action mise à jour"
+          description: |
+            Le scraping s'est terminé avec succès mais aucune action n'a été mise à jour.
+            
+            Statut: Succès (1)
+            Actions scrapées: {{ query "scraping_stocks_scraped_total" | first | value }}
+            Actions matchées: {{ query "scraping_stocks_matched_count" | first | value }}
+            Actions MAJ: 0 ⚠️
+            
+            🔍 Causes possibles:
+            - Jour férié non détecté par is_today_closed()
+            - Site Boursorama retourne des pages vides
+            - Aucun ISIN ne correspond
+            - Problème de commit en base de données
+            
+            💡 Actions:
+            - Vérifier si aujourd'hui est férié
+            - Consulter les logs: tail /app/logs_local/intraday.log
+            - Vérifier la BDD: SELECT COUNT(*) FROM stocks
+      
+      # 🔴 ALERTE CRITIQUE : Scraping non exécuté depuis 1h
+      - alert: ScrapingNotExecutedFor1Hour
+        expr: (time() - scraping_last_execution_timestamp) > 3600
+        for: 10m
+        labels:
+          severity: critical
+          component: scraping
+        annotations:
+          summary: "🔴 Scraping intraday non exécuté depuis 1h"
+          description: |
+            Le scraping intraday n'a pas été exécuté depuis plus de 1 heure !
+            
+            Dernière exécution: il y a {{ $value }}s (seuil: 3600s = 1h)
+            
+            🔍 Le scheduler APScheduler est peut-être arrêté ou le job n'est pas planifié.
+            
+            Planning normal: Lundi-Vendredi, 9h-18h, toutes les 30 minutes
+            
+            💡 Actions urgentes:
+            - Vérifier le scheduler: curl http://localhost:5000/admin/scheduler
+            - Vérifier les jobs APScheduler dans les logs: docker compose logs web | grep "job_scraping"
+            - Redémarrer le conteneur: docker compose restart web
+            - Lancer manuellement: docker compose exec web python manage.py scrape_intraday
