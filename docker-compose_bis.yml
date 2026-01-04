@@ -1,0 +1,136 @@
+
+services:
+  web:
+    build: .
+    image: pea_web:dev
+    container_name: pea-trading-app
+    volumes:
+      - ./db_data:/app/db_data
+      - ./exports_local:/app/pea_trading/static/exports
+      - ./uploads_local:/app/pea_trading/static/uploads
+      - ./logs_local:/app/pea_trading/static/logs
+      - ./logs_local:/app/logs_local
+    environment:
+      - USE_EXTERNAL_DB=1
+    #command: gunicorn -b 0.0.0.0:5000 pea_trading:application
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "5000:5000"  
+    networks:
+      - webproxy
+
+  prometheus:
+    image: prom/prometheus:v3.7.2
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+       - '--config.file=/etc/prometheus/prometheus.yml'
+       - '--storage.tsdb.path=/prometheus'
+       - '--storage.tsdb.retention.time=15d'
+       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+       - '--web.console.templates=/usr/share/prometheus/consoles'
+    depends_on:
+      - cadvisor
+      - alertmanager
+    healthcheck:
+      test: ["CMD-SHELL", "(curl -fsS http://localhost:9090/-/ready 2>/dev/null || wget -q --spider http://localhost:9090/-/ready 2>/dev/null) || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3   
+    restart: unless-stopped
+    networks:
+      - webproxy
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.10.2
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.rootfs=/rootfs'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - webproxy
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - webproxy
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    healthcheck:
+      test: ["CMD-SHELL", "(curl -fsS http://localhost:9093/-/ready 2>/dev/null || wget -q --spider http://localhost:9093/-/ready 2>/dev/null) || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=30s
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/lib/docker:/rootfs/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true  
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - webproxy
+    restart: always    
+
+  grafana:
+    image: grafana/grafana:12.2
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - webproxy
+
+  pushgateway:
+    image: prom/pushgateway:v1.11.1
+    container_name: pushgateway
+    ports:
+      - "9091:9091"                 # si tu veux y accéder depuis l'hôte
+    volumes:
+      - pushgw_data:/data          # persistance du fichier si demandé
+    command:
+      - '--web.listen-address=:9091'
+      - '--web.enable-admin-api'            # utile pour management via HTTP
+      - '--persistence.file=/data/metrics.store'   # active la persistance
+      - '--persistence.interval=1m'         # fréquence d'écriture
+    networks:
+      -  webproxy
+    restart: unless-stopped
+    
+
+networks:
+  webproxy:
+    driver: bridge

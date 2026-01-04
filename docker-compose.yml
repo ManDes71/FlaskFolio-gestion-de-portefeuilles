@@ -9,6 +9,7 @@ services:
       - ./exports_local:/app/pea_trading/static/exports
       - ./uploads_local:/app/pea_trading/static/uploads
       - ./logs_local:/app/pea_trading/static/logs
+      - ./logs_local:/app/logs_local
     environment:
       - USE_EXTERNAL_DB=1
     #command: gunicorn -b 0.0.0.0:5000 pea_trading:application
@@ -25,27 +26,131 @@ services:
       - webproxy
 
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.7.2
     container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/:/etc/prometheus/:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    depends_on:
+      - cadvisor
+      - alertmanager
+    healthcheck:
+      test: ["CMD-SHELL", "(curl -fsS http://localhost:9090/-/ready 2>/dev/null || wget -q --spider http://localhost:9090/-/ready 2>/dev/null) || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3   
     restart: unless-stopped
     networks:
       - webproxy
 
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.10.2
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.rootfs=/rootfs'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - webproxy
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - webproxy
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    healthcheck:
+      test: ["CMD-SHELL", "(curl -fsS http://localhost:9093/-/ready 2>/dev/null || wget -q --spider http://localhost:9093/-/ready 2>/dev/null) || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    command:
+      - --housekeeping_interval=30s
+      - --docker_only=false
+      - --storage_driver_buffer_duration=1m0s
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true  
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - webproxy
+    restart: always    
+
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:12.2
     container_name: grafana
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=VanGogh
+      - GF_SECURITY_ADMIN_PASSWORD=Van@24  
+   # environment:
+   #   - GF_AUTH_ANONYMOUS_ENABLED=true
+   #   - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+   #   - GF_SECURITY_ALLOW_EMBEDDING=true
+   #   - GF_SECURITY_COOKIE_SECURE=false
+   #   - GF_SECURITY_COOKIE_SAMESITE=none  
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/:ro  
     depends_on:
       - prometheus
     restart: unless-stopped
     networks:
       - webproxy
 
+  pushgateway:
+    image: prom/pushgateway:v1.11.1
+    container_name: pushgateway
+    ports:
+      - "9091:9091"                 # si tu veux y accéder depuis l'hôte
+    volumes:
+      - pushgw_data:/data          # persistance du fichier si demandé
+    command:
+      - '--web.listen-address=:9091'
+      - '--web.enable-admin-api'            # utile pour management via HTTP
+      - '--persistence.file=/data/metrics.store'   # active la persistance
+      - '--persistence.interval=1m'         # fréquence d'écriture
+    networks:
+      -  webproxy
+    restart: unless-stopped
+    
+
 networks:
   webproxy:
     driver: bridge
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+  alertmanager_data:
+  pushgw_data:

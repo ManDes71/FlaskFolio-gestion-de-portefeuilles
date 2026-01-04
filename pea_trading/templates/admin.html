@@ -19,7 +19,18 @@
             <button type="submit" class="btn btn-outline-warning">🚀 Relancer le scheduler</button>
         </form>
         <div id="schedulerMessage" class="mt-2"></div>
-        
+
+           <!-- 📊 Dashboards Grafana -->
+    <div class="mb-4">
+        <h5 class="mb-3">📊 Dashboards de monitoring</h5>
+        <a href="http://localhost:3000/d/a93b2db0-abc6-441f-957f-2fbae57c73a0/cron-jobs-monitoring?orgId=1&refresh=30s" target="_blank" class="btn btn-outline-primary me-2">📅 Cron Jobs Monitoring</a>
+        <a href="http://localhost:3000/d/scraping_intraday/scraping-intraday-boursorama?orgId=1&refresh=30s" target="_blank" class="btn btn-outline-info me-2">� Scraping Intraday</a>
+        <a href="http://localhost:3000/d/docker_monitoring_improved/dashboard-systeme-application-pea-trading?orgId=1&refresh=30s" target="_blank" class="btn btn-outline-success me-2">� Système & Application</a>
+        <a href="http://localhost:3000/d/7f4cafa2-931f-49d5-ae07-425b742a5ad5/datascientest-system-monitoring?orgId=1&refresh=30s" target="_blank" class="btn btn-outline-success me-2">� Système monitoring</a>
+        <a href="http://localhost:9090" target="_blank" class="btn btn-outline-warning me-2">🔍 Prometheus</a>
+        <a href="http://localhost:9093" target="_blank" class="btn btn-outline-danger">🚨 Alertmanager</a>
+    </div>
+    
     </div>      
     <h2 class="my-4">Valeurs à suivre</h2>
     <a href="{{ url_for('admin.admin_valeurs') }}" class="btn btn-primary me-2">Administrer les valeurs</a>

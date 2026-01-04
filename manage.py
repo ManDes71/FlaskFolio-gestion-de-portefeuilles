@@ -3,6 +3,7 @@ import os
 import unittest
 import click
 import logging
+import time
 from pea_trading import app, db
 from pea_trading.services.yahoo_finance import update_stock_prices, update_historical_prices
 from pea_trading.portfolios.portfolio import Portfolio
@@ -19,6 +20,7 @@ from pea_trading.services.export_utils import export_stocks_to_csv, export_stock
 from pea_trading.services.portfolio_loader import load_portfolio_data
 from pea_trading.portfolios.stock import Stock
 from pea_trading.users.models import User
+from pea_trading.utils.metrics import metrics_handler
 from werkzeug.security import generate_password_hash
 import csv
 from datetime import datetime
@@ -123,6 +125,26 @@ def update_data(historique):
                 logger.error(f"❌ Erreur lors de la mise à jour de l'historique: {e}")
                 print(f"❌ Erreur historique: {e}")
 
+@cli.command("scrape_intraday")
+def scrape_intraday():
+    """
+    🔍 Lance manuellement le scraping intraday depuis Boursorama
+    Usage : python manage.py scrape_intraday
+    """
+    logger.info("🔍 Commande 'scrape_intraday' exécutée")
+    
+    with app.app_context():
+        try:
+            from pea_trading.services.scheduler_jobs import job_scraping_intraday
+            print("🔁 Scraping intraday en cours...")
+            logger.info("🔁 Début du scraping intraday manuel")
+            job_scraping_intraday(app, db)
+            print("✅ Scraping intraday terminé.")
+            logger.info("✅ Scraping intraday terminé avec succès")
+        except Exception as e:
+            error_msg = f"❌ Erreur lors du scraping intraday: {e}"
+            logger.error(error_msg)
+            print(error_msg)
 
 @cli.command("init-db")
 @click.option("--force", is_flag=True, help="Recharge le portefeuille même si non vide")
@@ -331,17 +353,41 @@ def delete_history_duplicates():
 @cli.command("export_all_stocks_csv")
 def export_all_stocks_csv():
     """Exporte toutes les actions vers un fichier CSV"""
+    start_time = time.time()
+    success = False
+    records = 0
+    error_message = None
+    job_name = "export_all_stocks"
+    
     logger.info("📤 Commande 'export_all_stocks_csv' exécutée")
     
     with app.app_context():
         try:
             filepath = export_stocks_to_csv()
-            print(f"✅ Export des actions terminé : {filepath}")
-            logger.info(f"✅ Export des actions terminé : {filepath}")
+            
+            # Compter le nombre d'actions exportées
+            records = Stock.query.count()
+            
+            success_msg = f"✅ Export des actions terminé : {filepath} ({records} actions)"
+            print(success_msg)
+            logger.info(success_msg)
+            success = True
+            
         except Exception as e:
             error_msg = f"❌ Erreur lors de l'export des actions: {e}"
             logger.error(error_msg)
             print(error_msg)
+            error_message = str(e)
+        finally:
+            # Pousser les métriques vers Pushgateway
+            duration = time.time() - start_time
+            metrics_handler.push_job_metrics(
+                job_name=job_name,
+                success=success,
+                duration=duration,
+                records=records,
+                error_message=error_message
+            )
 
 
     # python manage.py export_all_stocks_csv
@@ -350,17 +396,42 @@ def export_all_stocks_csv():
 @cli.command("export_all_stock_history_csv")
 def export_all_stock_history_csv():
     """Exporte l'historique de toutes les actions vers un fichier CSV"""
+    start_time = time.time()
+    success = False
+    records = 0
+    error_message = None
+    job_name = "export_all_stock_history"
+    
     logger.info("📤 Commande 'export_all_stock_history_csv' exécutée")
     
     with app.app_context():
         try:
             filepath = export_stock_history_to_csv()
-            print(f"✅ Export de l'historique terminé : {filepath}")
-            logger.info(f"✅ Export de l'historique terminé : {filepath}")
+            
+            # Compter le nombre d'enregistrements exportés
+            from pea_trading.portfolios.stock import StockPriceHistory
+            records = StockPriceHistory.query.count()
+            
+            success_msg = f"✅ Export de l'historique terminé : {filepath} ({records} enregistrements)"
+            print(success_msg)
+            logger.info(success_msg)
+            success = True
+            
         except Exception as e:
             error_msg = f"❌ Erreur lors de l'export de l'historique: {e}"
             logger.error(error_msg)
             print(error_msg)
+            error_message = str(e)
+        finally:
+            # Pousser les métriques vers Pushgateway
+            duration = time.time() - start_time
+            metrics_handler.push_job_metrics(
+                job_name=job_name,
+                success=success,
+                duration=duration,
+                records=records,
+                error_message=error_message
+            )
 
     # python manage.py export_all_stock_history_csv
 
@@ -409,6 +480,12 @@ def export_portfolio_csv(portfolio_name, output):
     📁 Exporte les positions d'un portefeuille (symbole, ISIN, nom, quantité, prix d'achat, secteur) vers un CSV.
     Usage : python manage.py export_portfolio_csv "PEA"
     """
+    start_time = time.time()
+    success = False
+    records = 0
+    error_message = None
+    job_name = f"export_portfolio_{portfolio_name.replace(' ', '_')}"
+    
     logger.info(f"📁 Commande 'export_portfolio_csv' exécutée - portfolio: {portfolio_name}, output: {output}")
 
     with app.app_context():
@@ -418,18 +495,37 @@ def export_portfolio_csv(portfolio_name, output):
                 error_msg = f"❌ Portefeuille '{portfolio_name}' introuvable."
                 print(error_msg)
                 logger.error(error_msg)
+                error_message = error_msg
                 return
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             safe_name = portfolio_name.replace(" ", "_")
             filename = output or f"portefeuille_export_{safe_name}_{timestamp}.csv"
             path = export_portfolio_positions_to_csv(portfolio, filename)
-            print(f"✅ Export effectué : {path}")
-            logger.info(f"✅ Export du portefeuille '{portfolio_name}' effectué : {path}")
+            
+            # Compter les positions exportées
+            records = len(portfolio.positions)
+            
+            success_msg = f"✅ Export du portefeuille '{portfolio_name}' effectué : {path} ({records} positions)"
+            print(success_msg)
+            logger.info(success_msg)
+            success = True
+            
         except Exception as e:
             error_msg = f"❌ Erreur lors de l'export du portefeuille: {e}"
             logger.error(error_msg)
             print(error_msg)
+            error_message = str(e)
+        finally:
+            # Pousser les métriques vers Pushgateway
+            duration = time.time() - start_time
+            metrics_handler.push_job_metrics(
+                job_name=job_name,
+                success=success,
+                duration=duration,
+                records=records,
+                error_message=error_message
+            )
 
 
     # python manage.py export_portfolio_csv "PEA"
@@ -442,8 +538,12 @@ def export_transactions_csv(portfolio_name, output):
     📄 Exporte les transactions d'un portefeuille vers un fichier CSV.
     Usage : python manage.py export_transactions_csv "PEA"
     """
+    start_time = time.time()
+    success = False
+    records = 0
+    error_message = None
+    job_name = f"export_transactions_{portfolio_name.replace(' ', '_')}"
     
-
     logger.info(f"📄 Commande 'export_transactions_csv' exécutée - portfolio: {portfolio_name}, output: {output}")
     
     with app.app_context():
@@ -453,6 +553,7 @@ def export_transactions_csv(portfolio_name, output):
                 error_msg = f"❌ Portefeuille '{portfolio_name}' introuvable."
                 print(error_msg)
                 logger.error(error_msg)
+                error_message = error_msg
                 return
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -462,14 +563,29 @@ def export_transactions_csv(portfolio_name, output):
             logger.info(f"📄 Début de l'export des transactions pour le portefeuille '{portfolio_name}'")
             path = export_portfolio_transactions_to_csv(portfolio, filename)
             
-            success_msg = f"✅ Export des transactions du portefeuille '{portfolio_name}' terminé : {path}"
+            # Compter le nombre de transactions exportées
+            records = len(portfolio.transactions) if portfolio.transactions else 0
+            
+            success_msg = f"✅ Export des transactions du portefeuille '{portfolio_name}' terminé : {path} ({records} transactions)"
             print(success_msg)
             logger.info(success_msg)
+            success = True
             
         except Exception as e:
             error_msg = f"❌ Erreur lors de l'export des transactions: {e}"
             logger.error(error_msg)
             print(error_msg)
+            error_message = str(e)
+        finally:
+            # Pousser les métriques vers Pushgateway
+            duration = time.time() - start_time
+            metrics_handler.push_job_metrics(
+                job_name=job_name,
+                success=success,
+                duration=duration,
+                records=records,
+                error_message=error_message
+            )
 
     # python manage.py export_transactions_csv "PEA"
     # python manage.py export_transactions_csv "PEA-PME" --output "transactions_export_PEA-PME.csv"
@@ -482,6 +598,12 @@ def export_cash_movements_csv(portfolio_name, output):
     💰 Exporte les mouvements de trésorerie d'un portefeuille vers un CSV.
     Usage : python manage.py export_cash_movements_csv "PEA"
     """
+    start_time = time.time()
+    success = False
+    records = 0
+    error_message = None
+    job_name = f"export_cash_mouvements_{portfolio_name.replace(' ', '_')}"
+    
     logger.info(f"💰 Commande 'export_cash_mouvements_csv' exécutée - portfolio: {portfolio_name}, output: {output}")
 
     with app.app_context():
@@ -491,19 +613,37 @@ def export_cash_movements_csv(portfolio_name, output):
                 error_msg = f"❌ Portefeuille '{portfolio_name}' introuvable."
                 print(error_msg)
                 logger.error(error_msg)
+                error_message = error_msg
                 return
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             safe_name = portfolio_name.replace(" ", "_")
             filename = output or f"cash_mouvements_{safe_name}_{timestamp}.csv"
             path = export_portfolio_cash_movements_to_csv(portfolio, filename)
-
-            print(f"✅ Export des mouvements de trésorerie pour '{portfolio_name}' terminé : {path}")
-            logger.info(f"✅ Export des mouvements de trésorerie pour '{portfolio_name}' terminé : {path}")
+            
+            # Compter les mouvements de trésorerie exportés
+            records = len(portfolio.cash_movements)
+            
+            success_msg = f"✅ Export des mouvements de trésorerie pour '{portfolio_name}' terminé : {path} ({records} enregistrements)"
+            print(success_msg)
+            logger.info(success_msg)
+            success = True
+            
         except Exception as e:
             error_msg = f"❌ Erreur lors de l'export des mouvements de trésorerie: {e}"
             logger.error(error_msg)
             print(error_msg)
+            error_message = str(e)
+        finally:
+            # Pousser les métriques vers Pushgateway
+            duration = time.time() - start_time
+            metrics_handler.push_job_metrics(
+                job_name=job_name,
+                success=success,
+                duration=duration,
+                records=records,
+                error_message=error_message
+            )
 
     # python manage.py export_cash_mouvements_csv "PEA"
     # python manage.py export_cash_mouvements_csv "PEA-PME" --output "cash_mouvements_export_PEA-PME.csv"
@@ -564,27 +704,35 @@ def import_cash_movements_csv(portfolio_name, filename):
 
 @cli.command("show_logs")
 @click.option("--lines", default=50, help="Nombre de lignes à afficher (défaut: 50)")
-@click.option("--type", "log_type", default="manage", help="Type de log: 'manage', 'scheduler' ou 'all'")
+@click.option("--type", "log_type", default="manage", help="Type de log: 'manage', 'scheduler', 'intraday', 'yfinance' ou 'all'")
 def show_logs(lines, log_type):
     """
     📄 Affiche les logs récents
-    Usage : python manage.py show_logs --lines=20 --type=manage
+    Usage : python manage.py show_logs --lines=20 --type=yfinance
     """
     logger.info(f"📄 Commande 'show_logs' exécutée - lines: {lines}, type: {log_type}")
     
-    log_dir = os.path.join(os.path.dirname(__file__), 'pea_trading', 'static', 'logs')
+    # Deux emplacements possibles pour les logs
+    log_dir_static = os.path.join(os.path.dirname(__file__), 'pea_trading', 'static', 'logs')
+    log_dir_local = os.path.join(os.path.dirname(__file__), 'logs_local')
     
     if log_type == "manage":
-        log_files = [os.path.join(log_dir, 'manage.log')]
+        log_files = [os.path.join(log_dir_static, 'manage.log')]
     elif log_type == "scheduler":
-        log_files = [os.path.join(log_dir, 'scheduler.log')]
+        log_files = [os.path.join(log_dir_static, 'scheduler.log')]
+    elif log_type == "intraday":
+        log_files = [os.path.join(log_dir_local, 'intraday.log')]
+    elif log_type == "yfinance":
+        log_files = [os.path.join(log_dir_local, 'yfinance.log')]
     elif log_type == "all":
         log_files = [
-            os.path.join(log_dir, 'manage.log'),
-            os.path.join(log_dir, 'scheduler.log')
+            os.path.join(log_dir_static, 'manage.log'),
+            os.path.join(log_dir_static, 'scheduler.log'),
+            os.path.join(log_dir_local, 'intraday.log'),
+            os.path.join(log_dir_local, 'yfinance.log')
         ]
     else:
-        print(f"❌ Type de log invalide: {log_type}. Utilisez 'manage', 'scheduler' ou 'all'")
+        print(f"❌ Type de log invalide: {log_type}. Utilisez 'manage', 'scheduler', 'intraday', 'yfinance' ou 'all'")
         return
     
     for log_file in log_files:

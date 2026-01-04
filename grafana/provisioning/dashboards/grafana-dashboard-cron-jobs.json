@@ -1,0 +1,274 @@
+{
+  "title": "Cron Jobs Monitoring",
+  "timezone": "browser",
+  "editable": true,
+  "panels": [
+      {
+        "title": "Last Job Status",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "cron_job_success",
+            "legendFormat": "{{job_name}}",
+            "instant": true
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "orientation": "auto",
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "graphMode": "none"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "value": "0",
+                "text": "❌ FAILED"
+              },
+              {
+                "type": "value",
+                "value": "1",
+                "text": "✅ SUCCESS"
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            },
+            "unit": "none"
+          }
+        }
+      },
+      {
+        "title": "Last Execution Status",
+        "type": "table",
+        "gridPos": { "x": 6, "y": 0, "w": 18, "h": 8 },
+        "targets": [
+          {
+            "expr": "max by (job_name) (cron_job_success)",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          },
+          {
+            "expr": "max by (job_name) (cron_job_duration_seconds)",
+            "format": "table",
+            "instant": true,
+            "refId": "B"
+          },
+          {
+            "expr": "max by (job_name) (cron_job_records_processed)",
+            "format": "table",
+            "instant": true,
+            "refId": "C"
+          },
+          {
+            "expr": "max by (job_name) (cron_job_last_execution_timestamp * 1000)",
+            "format": "table",
+            "instant": true,
+            "refId": "D"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "merge",
+            "options": {}
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true
+              },
+              "indexByName": {
+                "job_name": 0,
+                "Value #A": 1,
+                "Value #B": 2,
+                "Value #C": 3,
+                "Value #D": 4
+              },
+              "renameByName": {
+                "job_name": "Job Name",
+                "Value #A": "Success",
+                "Value #B": "Duration (s)",
+                "Value #C": "Records",
+                "Value #D": "Last Execution"
+              }
+            }
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "sortBy": [
+            {
+              "displayName": "Last Execution",
+              "desc": true
+            }
+          ]
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [
+              {
+                "type": "value",
+                "value": "1",
+                "text": "✅ Success"
+              },
+              {
+                "type": "value",
+                "value": "0",
+                "text": "❌ Failed"
+              }
+            ]
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Success" },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "value": null, "color": "red" },
+                      { "value": 1, "color": "green" }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "Last Execution" },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "dateTimeFromNow"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "title": "Job Execution Duration",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "cron_job_duration_seconds",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10,
+              "pointSize": 5
+            }
+          }
+        }
+      },
+      {
+        "title": "Records Processed per Job",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "cron_job_records_processed",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 80,
+              "pointSize": 5
+            }
+          }
+        }
+      },
+      {
+        "title": "Job Execution Timeline",
+        "type": "state-timeline",
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 6 },
+        "targets": [
+          {
+            "expr": "cron_job_success",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "options": {
+          "mergeValues": false,
+          "showValue": "never",
+          "alignValue": "left"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "value": "0",
+                "displayText": "Failed",
+                "color": "red"
+              },
+              {
+                "type": "value",
+                "value": "1",
+                "displayText": "Success",
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
+    ],
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  }
+}
