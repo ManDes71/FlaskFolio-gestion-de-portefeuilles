@@ -218,3 +218,9 @@ manage_working.py
 manage_with_logs.py
 manage_logs_copy.log
 output.log
+test_alert_simulation.py
+test_alerts.sh
+test_all_jobs.sh
+test_monitoring.sh
+test_scraping_simulation.py
+validate_phase1.sh
