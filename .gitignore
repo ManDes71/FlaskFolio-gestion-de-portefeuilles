@@ -146,7 +146,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+aws/
 # Spyder project settings
 .spyderproject
 .spyproject
